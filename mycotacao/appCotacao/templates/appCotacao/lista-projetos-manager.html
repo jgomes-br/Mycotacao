@@ -1,0 +1,33 @@
+{% extends 'appCotacao/base.html' %}
+{% block content %}
+
+    <p>Olá {{ user.get_username }}, selecione uma das cotacoes abaixo</p>
+
+    <a href="{% url 'criandoprojeto'%}" class="btn btn-primary mb-1"> Adicionar novo projeto</a>
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <td>Nome Projeto</td>
+                <td>Inicio</td>
+                <td>Fim</td>
+                <td>Lance</td>
+                <td>operação</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for projeto in projetos %}
+            <tr>
+                <td>{{ projeto.nome }}</td>
+                <td>{{ projeto.start|date:"d/m/Y H:m" }}</td>
+                <td>{{ projeto.fim|date:"d/m/Y H:m" }}</td>
+                <td>{{ projeto.lance_atual}}</td>
+                <td>
+                    <a href="{% url 'editando' projeto.id %}">Editar</a> |
+                    <a href="{% url 'cotacao' projeto.id %}">Gerenciar</a>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    
+  {% endblock %}

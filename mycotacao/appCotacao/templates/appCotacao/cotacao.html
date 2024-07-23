@@ -1,0 +1,189 @@
+{% extends 'appCotacao/base.html' %}
+{% block content %}
+{% comment %} <div class="col-sm-9 col-md-8 col-lg-6"> {% endcomment %}
+<div id="alerta-proposta-incompleta" class="alert alert-danger" role="alert" style="display:none">
+  Favor responder as proposta!
+</div>
+<div hidden id="dados" >
+  dsajdkasd
+  <span id="usuario">{{ eu }}</span>
+  asdhasdash
+</div>
+<form action="#" method="post">
+  {% csrf_token %}
+  <h1>{{ projeto.nome }}
+    <input class="btn btn-info" type="submit" value="Submit" id="methodForm">
+  </h1>
+    {% for item in estrutura %}
+      <div class="card border-danger ">
+        <div class="card-header">
+          {{ item.produto.descricao }} -
+          <span id='status-card' class="badge text-bg-danger">{{ item.get_status_display }}</span>
+        </div>
+        <div class="card-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Lance</th>
+                <th scope="col">Proposta</th>
+                <th scope="col">Preço</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lance in lances.all %}
+                {% if lance.estrutura == item %}
+                  <tr>
+                    <td>{{ lance.lance }}</td>
+                    <td>{{ lance.dono.username }}</td>
+                    <td>{{ lance.preco }}</td>
+                    <td>{{ lance.get_status_display }}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+              
+              <input type="text" name="resposta-{{item.id}}" value="PENDENTE" class="status-input">
+
+              <tr id="novo-lance" style="display:none">
+                <td>Novo</td>
+                <td>{{ eu.username }}</td>
+                <td>
+                  <div id="entrada" class="input-group input-group-sm col-sm-10" style="width: 100px;">
+                    <span class="input-group-text">$</span>
+                    <input type="text" name="resposta-{{item.id}}" class="form-control input-custo" pattern="^([0-9]+)(,[0-9]{1,2})?$"/>
+                  </div>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+
+            {% if item.status == '1' %}
+              <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="button" class="btn btn-primary btn-sm btn-resposta disable">Aceitar</button>
+                <button type="button" class="btn btn-danger btn-sm btn-resposta">Recusar</button>
+              </div>
+            {% endif %}
+          
+        </div>
+
+        <div id="resposta" class="card-footer bg-transparent"  style="display:none">
+          <span>Você aceitou a resposta</span>
+          <button type="button" class="btn btn-link">Desfazer</button>
+        </div>
+      </div>
+      <br >
+    {% endfor %}
+  </form>
+
+  <script>
+
+    function recusar_proposta(card_produto) {
+      let tabela = card_produto.find('table')
+      tabela.find('tr:nth-last-child(2) > td:last').text('Recusado')
+      card_produto.find('#novo-lance').show()
+      card_produto.find('.btn-resposta').hide()
+      // card_produto.find("#btn-desfazer").show()
+      card_produto.find('#resposta > span').text('Voce recusou a proposta')
+      card_produto.find('#resposta').show()
+      card_produto.removeClass("border-danger")
+      card_produto.find(".status-input").val("RECUSADO")
+      card_produto.find(".input-custo").prop('required',true)
+
+    }
+    
+    function aceitar_proposta(card_produto) {
+      let tabela = card_produto.find('table')
+      tabela.find('tr:nth-last-child(2) > td:last').text('Aceito')
+      card_produto.find('.btn-resposta').hide()
+      card_produto.find('#resposta > span').text('Você aceitou a proposta')
+      card_produto.find('#resposta').show()
+      card_produto.removeClass("border-danger")
+      card_produto.find(".status-input").val("ACEITO")
+    }
+    
+    function desfazer_proposta(card_produto) {
+      let tabela = card_produto.find('table')
+      let resposta = tabela.find('tr:nth-last-child(2) > td:last').text()
+      tabela.find('tr:nth-last-child(2) > td:last').text('Pendente')
+      card_produto.find('#resposta').hide()
+      if (resposta == 'Recusado') {
+        tabela.find('tr:last').hide()
+      }
+    
+      card_produto.find('button').show()
+      card_produto.addClass("border-danger")
+      card_produto.find(".status-input").val("PENDENTE")
+      card_produto.find(".input-custo").prop('required',false)
+    }
+
+    function validacao(){
+      
+      $("#alerta-proposta-incompleta").hide()
+      if ($(".border-danger").length){
+        $("#alerta-proposta-incompleta").show()
+        return false
+      }else{
+        return true
+      }
+
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.querySelector('form')
+      form.addEventListener('submit', event => {
+        // submit event detected
+        event.preventDefault()
+       if(validacao()){
+
+         $("form").submit()
+       }  
+
+      })
+    })
+    
+    function setup(){
+      $('.card').each(function(index, data){
+        var status = $(this).find('#status-card').text()
+        var finalizado =  status == 'Finalizado'
+        var dono_proposta = $(this).find('tbody > tr:nth-last-child(2) > td:nth-child(2)').text()
+
+        if (finalizado || dono_proposta == $('#usuario').text()){
+          if (finalizado){
+            $(this).find('#status-card').removeClass('text-bg-danger')
+            $(this).find('#status-card').addClass('text-bg-success')
+          }
+          $(this).removeClass('border-danger')
+          $(this).find('input').remove()
+
+        }
+      })
+      
+      if($('.status-input').length == 0){
+        $('input').remove()
+      }
+
+    }
+
+    $(document).ready(function () {
+      // setup()
+
+
+      $('button').click(function () {
+        // let card_produto = $(this).parent().parent().parent().parent()
+        let card_produto = $(this).closest('.card')
+        let btn_act = $(this).text()
+    
+        if (btn_act == 'Aceitar') {
+          aceitar_proposta(card_produto)
+        } else if (btn_act == 'Recusar') {
+          recusar_proposta(card_produto)
+        } else if (btn_act == 'Desfazer') {
+          desfazer_proposta(card_produto)
+        }
+      })
+    })
+
+  </script>
+{% comment %} </div> {% endcomment %}
+{% endblock %}

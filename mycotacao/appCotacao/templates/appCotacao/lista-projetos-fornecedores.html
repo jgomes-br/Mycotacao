@@ -1,0 +1,15 @@
+{% extends 'appCotacao/base.html' %}
+{% block content %}
+
+
+
+    <span>Olá {{ user.get_username }}, selecione uma das cotacoes abaixo</span>
+
+    <ul>
+    {% for projeto in projetos %}
+        <li><a href="{% url 'cotacao' projeto.id %}">{{ projeto.nome }} - inicio: {{ projeto.start }} - lance atual: {{ projeto.lance_atual}} </a></li>
+    {% endfor %}
+    </ul>
+
+    
+  {% endblock %}

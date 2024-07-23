@@ -1,0 +1,153 @@
+{% extends 'appCotacao/base.html' %}
+{% block content %}
+
+
+
+<form action="" method="post">
+    
+    {% csrf_token %}
+    <h1>{{form.cod}}</h1>
+    <h1>Nova Cotacao</h1>
+    {% if form.errors %}
+    {% for campo in form %}
+        {% for erro in campo.errors %}
+        <div class="alert alert-danger" role="alert">
+            {{ erro|escape }}
+        </div>
+        {% endfor%}
+    {% endfor %}
+    {% endif %}
+
+    <hr>
+    <h5>Projeto</h5>
+    <div class="mb-3 row">
+        <label for="id_titulo" class="col-sm-2 col-form-label">Titulo</label>
+        <div class="col-sm-10">
+            {{ form.titulo }}
+        </div>
+    </div>
+
+    <div class="mb-3 row">
+        <label for="id_inicio" class="col-sm-2 col-form-label">Inicio</label>
+        <div class="col-sm-10">
+            {{ form.inicio }}
+        </div>
+    </div>
+
+    <hr>
+    <h5>Produtos</h5>
+
+    {{ form.produto }}
+    <div class="row">
+        <div class="col">
+            <label for='op-produto-left'>Produtos disponiveis</label>
+            <select id="op-produto-left" class="form-select" size="7" multiple aria-label="Multiple select example">
+
+                {% for produto in produtos %}
+
+                <option value="{{produto.id}}">{{produto.descricao}}</option>
+
+                {% endfor %}
+            </select>
+            <button id="add-produto" type="button" class="btn btn-primary btn-sm mt-1">Incluir</button>
+        </div>
+        <div class="col">
+            <label for="op-produto-right">Produtos selecionados</label>
+            <select id="op-produto-right" class="form-select" size="7" multiple aria-label="Multiple select example">
+            </select>
+            <button id="rm-produto" type="button" class="btn btn-danger btn-sm mt-1">Remover</button>
+        </div>
+    </div>
+
+    <hr>
+    
+    <h5>Fornecedores</h5>
+
+    {{ form.fornecedor }}
+
+    <div class="row">
+        <div class="col">
+            <label for='op-fornecedor-left'>Fornecedores disponiveis</label>
+            <select id="op-fornecedor-left" class="form-select" size="7" multiple aria-label="Multiple select example">
+
+                {% for fornecedor in fornecedores%}
+
+                    <option value="{{fornecedor.id}}">{{fornecedor.nome}}</option>
+
+                {% endfor %}
+            </select>
+            <button id="add-fornecedor" type="button" class="btn btn-primary btn-sm mt-1 fornecedor">Incluir</button>
+        </div>
+        <div class="col">
+            <label for="op-fornecedor-right">Fornecedores selecionados</label>
+            <select id="op-fornecedor-right" class="form-select" size="7" multiple aria-label="Multiple select example">
+            </select>
+            <button id="rm-fornecedor" type="button" class="btn btn-danger btn-sm mt-1 fornecedor">Remover</button>
+        </div>
+    </div>
+    <hr>
+    <button type="submit" class="btn btn-primary">Criar Projeto</button>
+ </form>
+
+
+<script>
+    
+    function adicionar_painel_direita(grupo){
+
+        $(`#op-${grupo}-left > option:selected`).each(function(index, data){
+            $(`#op-${grupo}-right`).append(data)
+            
+        })
+        enviar_painel_esquerdo_saida(grupo)
+    }
+
+    function remover_painel_direia(grupo){
+        $(`#op-${grupo}-right > option:selected`).each(function(index, data){
+            $(`#op-${grupo}-left`).append(data)
+        })
+        enviar_painel_esquerdo_saida(grupo)
+    }
+
+    function enviar_painel_esquerdo_saida(grupo){
+        var temp = ''
+        $(`#op-${grupo}-right option`).each((index, data) =>{
+            if (temp.length > 0){
+                temp += ';'
+            }
+            temp += data.value
+        })
+
+        $(`#id_${grupo}`).val(temp)
+    }
+
+    function setup_painel(grupo){
+        let selecao = $(`#id_${grupo}`).val()
+        if (selecao.length == 0){ return}
+        selecao.split(';').forEach((data) => {
+            $(`#op-${grupo}-right`).append($(`#op-${grupo}-left option[value=${data}]`))
+        })
+        
+    }
+
+    $(document).ready(function(){
+        setup_painel('produto')
+        setup_painel('fornecedor')
+
+        $('#add-fornecedor').click(() => {
+            adicionar_painel_direita('fornecedor')
+        })
+        $('#rm-fornecedor').click(() =>{
+            remover_painel_direia('fornecedor')
+        })
+
+        $('#add-produto').click(() => {
+            adicionar_painel_direita('produto')
+        })
+        $('#rm-produto').click(() =>{
+            remover_painel_direia('produto')
+        })
+
+    })
+</script>
+
+{% endblock %}
