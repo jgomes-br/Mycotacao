@@ -1,8 +1,7 @@
 from .models import Estrutura, Lance
 from decimal import Decimal
 
-from .models import Projeto
-from .formularios import ProjetoForm
+from .models import Projeto, Estrutura
 
 def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str):
     # precisamos gravar a reposta recbidas da pagina 
@@ -24,16 +23,12 @@ def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str):
     lance.save()
     estrutura.save()
 
-def gravar_projeto(form:ProjetoForm, cod):
 
-    if cod > -1:
-        proj = Projeto.objects.get(pk = cod)
-        proj.nome=form.cleaned_data['titulo']
-        proj.start = form.cleaned_data['inicio']
-        proj.produtos = form.cleaned_data['produto']
-        proj.fornecedores = form.cleaned_data['fornecedor']
-    else:
-        proj = Projeto(nome=form.cleaned_data['titulo'], start = form.cleaned_data['inicio'])
-    proj.save()
-    return proj.id
-    # Projeto(nome=form)
+def create_strutura(projeto: Projeto):
+    for produto in projeto.produto.all():
+        for fornecedor in projeto.fornecedor.all():
+            if not Estrutura.objects.filter(projeto=projeto, produto=produto, fornecedor=fornecedor).exists():
+                Estrutura.objects.create(projeto=projeto, produto=produto, fornecedor=fornecedor).save()
+
+    projeto.estrutura_set.exclude(fornecedor__in=projeto.fornecedor.all()).delete() # type: ignore
+    projeto.estrutura_set.exclude(produto__in=projeto.produto.all()).delete() # type: ignore

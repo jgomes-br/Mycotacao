@@ -3,24 +3,29 @@ from django.contrib.auth.models import  User, Group
 
 from decimal import Decimal
 
+class Produto(models.Model):
+    descricao = models.CharField(max_length=100, unique=True)
+
+    def __str__(self) -> str:
+        return self.descricao
+    
+class Fornecedor(models.Model):
+    nomeempresa = models.CharField(max_length=100, unique=True)
+    responsavel = models.ForeignKey(User,verbose_name = 'User', on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return self.nomeempresa
+
 class Projeto(models.Model):
     nome = models.CharField(max_length=200, unique=True)
     start = models.DateTimeField()
     fim = models.DateTimeField(null=True)
     lance_atual = models.SmallIntegerField(default=1)
-    produtos = models.CharField(max_length=200, default='')
-    fornecedores = models.CharField(max_length=200, default='')
-
+    fornecedor = models.ManyToManyField(Fornecedor)
+    produto = models.ManyToManyField(Produto)
+    
     def __str__(self) -> str:
         return self.nome
-
-class Fornecedor(models.Model):
-    nome = models.CharField(max_length=100, unique=True)
-    cnpj = models.CharField(max_length=16) # 000.000.0000-00
-    dono = models.ForeignKey(User,verbose_name = 'User', on_delete=models.CASCADE)
-
-class Produto(models.Model):
-    descricao = models.CharField(max_length=100, unique=True)
 
 class Estrutura(models.Model):
     OPCOES_STATUS =(
@@ -36,7 +41,8 @@ class Estrutura(models.Model):
     volume = models.IntegerField(null=True)
 
     class Meta:
-        unique_together  = [["projeto", "produto", "fornecedor"]]
+        unique_together  = [["produto", "fornecedor", "projeto"]]
+
 
 class Lance(models.Model):
     OPCOES_STATUS =(

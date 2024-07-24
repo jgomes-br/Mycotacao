@@ -11,7 +11,7 @@ from .models import Projeto, Fornecedor, Lance, Produto
 from .formularios import TesteForm, ProjetoForm
 
 # camada logica
-from .banco_dados import gravar_resposta_form, gravar_projeto
+from .opdb import gravar_resposta_form
 
 # Create your views here.
 
@@ -43,32 +43,6 @@ def cotacao(request, cod_cotacao):
                                                                 'lances':lances, 'projeto': pr, 
                                                                 "eu":request.user,
                                                                 })
-
-def criando_projeto(request, cod_projeto=-1):
-    
-    if request.method == 'POST':
-        print('post')
-        form = ProjetoForm(request.POST)
-        if form.is_valid():
-            try:
-                gravar_projeto(form, cod_projeto)
-            except IntegrityError:
-                print('Não foi possivel')
-    elif cod_projeto > -1:
-        # editando
-        pr = Projeto.objects.get(pk=cod_projeto)
-        data = {'titulo':pr.nome, 'inicio':pr.start, 'fim':pr.fim, 'cod':cod_projeto,
-                'fornecedor':pr.fornecedores, 'produto':pr.produtos}
-        form = ProjetoForm(initial=data)
-        
-    else:
-        # novo
-        form = ProjetoForm()
-
-    fonecedores = Fornecedor.objects.all()
-    produtos = Produto.objects.all()
-    contexto = {'form': form,  'fornecedores': fonecedores, 'produtos': produtos}
-    return render(request, 'appCotacao/novoprojeto.html', context=contexto)
 
 
 def teste(request):
