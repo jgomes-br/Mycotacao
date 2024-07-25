@@ -1,0 +1,2 @@
+Como filtrar itens que não pertence a uma lista 
+https://stackoverflow.com/questions/4523282/django-in-not-in-query

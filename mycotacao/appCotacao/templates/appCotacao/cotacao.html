@@ -1,13 +1,15 @@
 {% extends 'appCotacao/base.html' %}
+
 {% block content %}
 {% comment %} <div class="col-sm-9 col-md-8 col-lg-6"> {% endcomment %}
 <div id="alerta-proposta-incompleta" class="alert alert-danger" role="alert" style="display:none">
   Favor responder as proposta!
 </div>
-<div hidden id="dados" >
+<div id="dados"  >
   dsajdkasd
   <span id="usuario">{{ eu }}</span>
   asdhasdash
+  <span id="perfil">{{ perfil }}</span>
 </div>
 <form action="#" method="post">
   {% csrf_token %}
@@ -15,7 +17,7 @@
     <input class="btn btn-info" type="submit" value="Submit" id="methodForm">
   </h1>
     {% for item in estrutura %}
-      <div class="card border-danger ">
+      <div class="card ">
         <div class="card-header">
           {{ item.produto.descricao }} -
           <span id='status-card' class="badge text-bg-danger">{{ item.get_status_display }}</span>
@@ -35,18 +37,18 @@
                 {% if lance.estrutura == item %}
                   <tr>
                     <td>{{ lance.lance }}</td>
-                    <td>{{ lance.dono.username }}</td>
+                    <td>{{ lance.dono.first_name }}</td>
                     <td>{{ lance.preco }}</td>
                     <td>{{ lance.get_status_display }}</td>
                   </tr>
                 {% endif %}
               {% endfor %}
               
-              <input type="text" name="resposta-{{item.id}}" value="PENDENTE" class="status-input">
+              <input type="hidden" name="resposta-{{item.id}}" value="PENDENTE" class="status-input">
 
               <tr id="novo-lance" style="display:none">
                 <td>Novo</td>
-                <td>{{ eu.username }}</td>
+                <td>Eu</td>
                 <td>
                   <div id="entrada" class="input-group input-group-sm col-sm-10" style="width: 100px;">
                     <span class="input-group-text">$</span>
@@ -58,16 +60,14 @@
             </tbody>
           </table>
 
-            {% if item.status == '1' %}
-              <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <button type="button" class="btn btn-primary btn-sm btn-resposta disable">Aceitar</button>
-                <button type="button" class="btn btn-danger btn-sm btn-resposta">Recusar</button>
-              </div>
-            {% endif %}
-          
+          <div class="btn-resposta" style="display:none;">
+            <button type="button" class="btn btn-primary btn-sm">Aceitar</button>
+            <button type="button" class="btn btn-danger btn-sm" >Recusar</button>
+          </div>
+        
         </div>
 
-        <div id="resposta" class="card-footer bg-transparent"  style="display:none">
+        <div id="resposta" class="card-footer bg-transparent"  style="display:none;">
           <span>Você aceitou a resposta</span>
           <button type="button" class="btn btn-link">Desfazer</button>
         </div>
@@ -77,6 +77,9 @@
   </form>
 
   <script>
+    const STATUS_INICIAL = 'INICIAL'
+    const STATUS_RECUSADO = 'RECUSADO'
+    const STATUS_ACEITO = 'ACEITO'
 
     function recusar_proposta(card_produto) {
       let tabela = card_produto.find('table')
@@ -141,13 +144,27 @@
 
       })
     })
+
+    function statusCard(card, status){
+      switch (status){
+        case STATUS_ACEITO:
+        break
+        case STATUS_INICIAL:
+          card.find('#novo-lance').show()
+          card.find('.btn-resposta').hide()
+          card.find('.status-input').val('INICIAL')
+          card.removeClass('border-danger')
+        break
+        case STATUS_RECUSADO:
+      }
+    }
     
     function setup(){
       $('.card').each(function(index, data){
-        var status = $(this).find('#status-card').text()
-        var finalizado =  status == 'Finalizado'
+        var status = $(this).find('#status-card').text().toLowerCase()
+        var finalizado =  (status == 'finalizado')
+        var perfil = $('#perfil').text().toLowerCase()
         var dono_proposta = $(this).find('tbody > tr:nth-last-child(2) > td:nth-child(2)').text()
-
         if (finalizado || dono_proposta == $('#usuario').text()){
           if (finalizado){
             $(this).find('#status-card').removeClass('text-bg-danger')
@@ -156,7 +173,13 @@
           $(this).removeClass('border-danger')
           $(this).find('input').remove()
 
+        }else if (status == 'start'){
+          statusCard($(this), STATUS_INICIAL)
+        }else if(status == perfil){
+            $(this).addClass('border-danger')
+            $(this).find('.btn-resposta').show()
         }
+
       })
       
       if($('.status-input').length == 0){
@@ -166,7 +189,7 @@
     }
 
     $(document).ready(function () {
-      // setup()
+      setup()
 
 
       $('button').click(function () {
