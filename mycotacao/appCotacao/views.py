@@ -8,7 +8,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Projeto, Fornecedor, Lance, Produto
-from .formularios import TesteForm, ProjetoForm
+from .formularios import TesteForm
 
 # camada logica
 from .opdb import gravar_resposta_form
@@ -26,7 +26,7 @@ def lista_cotacao(request):
     
     return render(request, pagina, context={'projetos': lista})
 
-def cotacao(request, cod_cotacao):
+def cotacao(request, cod_cotacao, forn_id=None):
 
     if request.method == "POST":
         # print(request.user)
@@ -35,30 +35,19 @@ def cotacao(request, cod_cotacao):
         return HttpResponseRedirect('/')
     
     pr = get_object_or_404(Projeto, pk=cod_cotacao)
-        
-    estrutura =  pr.estrutura_set.filter(fornecedor__nome=forn.nome) # type: ignore
+    if not forn_id:
+        forn = Fornecedor.objects.get(responsavel=request.user)
+        perfil = 'FORNECEDOR'
+    else:
+        forn = Fornecedor.objects.get(pk=forn_id)
+        perfil = 'ADMIM'
+
+
+    estrutura =  pr.estrutura_set.filter(fornecedor__nomeempresa=forn.nomeempresa) # type: ignore
     lances = Lance.objects.filter(estrutura__projeto__id=pr.id, estrutura__fornecedor__id=forn.id) # type: ignore
 
     return render(request, 'appCotacao/cotacao.html', context={'estrutura':estrutura , 
                                                                 'lances':lances, 'projeto': pr, 
-                                                                "eu":request.user,
+                                                                "eu":request.user, 'forn':forn, 'perfil':perfil
                                                                 })
 
-
-def teste(request):
-    if request.method == "POST":
-        # create a form instance and populate it with data from the request:
-        form = TesteForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            print(form.cleaned_data['subject'])
-            # process the data in form.cleaned_data as required
-            # ...
-            # redirect to a new URL:
-            return HttpResponse("/teste")
-
-    # if a GET (or any other method) we'll create a blank form
-    else:
-        form = TesteForm()
-        
-    return render(request, 'appCotacao/teste.html', context={"formulario": form})

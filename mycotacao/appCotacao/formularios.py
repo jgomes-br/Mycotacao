@@ -19,27 +19,6 @@ class TesteForm(forms.Form):
         cleaned_data = super().clean()
         # self.add_error("cc_myself", "oi meu amigo")
 
-class ProjetoForm(forms.Form):
-    cod = forms.IntegerField(initial=-1)
-    titulo = forms.CharField(max_length=100, 
-                             widget=forms.TextInput(
-                                 attrs={'class':'form-control'}))
-    inicio = forms.DateTimeField(
-        widget=forms.TextInput(
-            attrs={'type':'datetime-local', 'class':'form-control'}))
-    fim = forms.DateTimeField(
-        widget=forms.TextInput(
-            attrs={'type':'datetime-local', 'class':'form-control'}), 
-            required=False)
-    fornecedor = forms.CharField()
-    produto = forms.CharField()
-
-    def clean(self):
-        cleaned_data = super().clean()
-        cod = self.cleaned_data['cod']
-        if Projeto.objects.filter(nome=self.cleaned_data['titulo'], pk__lt=cod).exists():
-            self.add_error('titulo', 'Titulo já existe')
-
 class ProjectoAdminForm(forms.ModelForm):
     class Meta:
         model = Projeto

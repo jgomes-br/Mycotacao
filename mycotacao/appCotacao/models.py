@@ -29,8 +29,9 @@ class Projeto(models.Model):
 
 class Estrutura(models.Model):
     OPCOES_STATUS =(
-        ('1', 'Aguardando fornecedor'),
-        ('2', 'Aguardando Adm'),
+        ('0', 'start'),
+        ('1', 'fornecedor'),
+        ('2', 'admim'),
         ('3', 'Finalizado'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
