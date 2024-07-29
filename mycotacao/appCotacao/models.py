@@ -40,6 +40,7 @@ class Estrutura(models.Model):
     status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
     lance_vencedor = models.SmallIntegerField(null=True)
     volume = models.IntegerField(null=True)
+    
 
     class Meta:
         unique_together  = [["produto", "fornecedor", "projeto"]]
