@@ -1,0 +1,149 @@
+{% extends 'appCotacao/base.html' %}
+
+{% block cabecalho %}
+<style>
+  .custom-table {
+    font-size: smaller;
+  }
+
+  .celula-preco:hover{
+    /* background-color: yellowgreen !important; */
+    cursor: pointer;
+  }
+  .celula-preco{
+    background-color: yellow !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+<!-- Modal -->
+<div class="modal fade" id="formulario-contra" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h1 class="modal-title fs-5" id="exampleModalLabel">Contra Proposta</h1>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+
+  <p> Proposta fornecedor <span id="proposta-fornecedor"></span></p> 
+
+  <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+    <input type="radio" class="btn-check" name="btnradio" id="btnradioaceito" autocomplete="off">
+    <label class="btn btn-outline-primary" for="btnradioaceito">Aceitar</label>
+  
+    <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" checked>
+    <label class="btn btn-outline-primary" for="btnradio2">Recusar</label>
+  </div>
+  <br>
+
+  <div class="mt-2">
+    <label for="nova-preoposta">Nova Proposta</label><input type="number" name="" id="nova-preoposta">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
+      <label class="form-check-label" for="flexCheckChecked">
+        Fornecedor pode enviar uma contraproposta
+      </label>
+    </div>
+  </div>
+
+  <span id="estrutura"></span>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+<button type="button" class="btn btn-primary" id="btn-save-form" data-bs-dismiss="modal">Save changes</button>
+</div>
+</div>
+</div>
+</div>
+
+<h2>Projeto {{projeto.nome}}</h2>
+
+<div class="table-responsive-xxl">
+<table class="table table-bordered table-sm">
+  <thead>
+    <tr>
+      <th scope="col" >PRODUTO</th>
+      {% for fornecedor in tabela.colunas %}
+        <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.id %}">{{fornecedor.nomeempresa}}</a></th>
+      {% endfor %}
+      <th scope="col">Ação Massa</th>
+    </tr>
+
+  </thead>
+  <tbody>
+
+    {% for linha in tabela.linhas %}
+    <tr>
+      <td>{{ linha.0 }}</td>
+      {% for preco in linha.1 %}
+      {% if preco.1 == 2%}
+        <td status={{preco.1}} class="preco celula-preco" proposta-fornecedor="{{preco.0}}"
+          id='proposta-{{preco.2}}' data-bs-toggle="modal" data-bs-target="#formulario-contra">
+          <span></span><span id='preco-raw'>{{ preco.0 }}</span>
+          <input type="text" id="proposta-{{preco.2}}"></td>
+        {% else %}
+          <td status={{preco.1}} class="preco" id='proposta-{{preco.2}}'>
+          <span></span>{{ preco.0 }}</td>
+      {%endif%}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+   
+  </tbody>
+</table>
+</div>
+
+
+<script>
+  function setup(){
+    $('tbody td').each(function(index, data){
+      if ($(this).attr('status')) {
+        var status = $(this).attr('status')
+        var status_visivel = ''
+        if (status == 2){
+          status_visivel ='&darr;'
+        }else if(status == 3){
+          status_visivel = '&there4;'
+          $(this).attr('style', 'color:green')
+        }else if (status <= 1){
+          status_visivel = '&uarr;'
+        }
+
+        $(this).find('span:first-child').html(status_visivel)
+      }
+    })
+  }
+
+  $(document).ready(function () {
+    setup()
+    const form = document.getElementById('formulario-contra')
+
+    $('#btn-save-form').on('click', function(){
+      let proposta = $('#estrutura').text()
+
+      if ($('#btnradioaceito').is(':checked')){
+        $("input#"+proposta).val('ACEITO')
+        let novo = $("td#"+proposta).attr('proposta-fornecedor')
+        $("td#"+proposta + '> #preco-raw').text(novo)
+        $("td#"+proposta + '> span:first-child').html('&there4;')
+      }else{
+        let novo = $('#nova-preoposta').val().replace('.', ',')
+        $("input#"+proposta).val('RECUSADO:' + novo)
+        $("td#"+proposta + '> #preco-raw').text(novo)
+        $("td#"+proposta + '> span:first-child').text('*')
+      }
+
+    })
+    form.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget
+      $('#estrutura').text(button.id)
+      $('#proposta-fornecedor').text(button.getAttribute('proposta-fornecedor'))
+    })
+
+  })
+</script>
+  {% endblock %}
