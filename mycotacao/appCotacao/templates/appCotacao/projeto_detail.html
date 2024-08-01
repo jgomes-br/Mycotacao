@@ -32,23 +32,31 @@
   <p> Proposta fornecedor <span id="proposta-fornecedor"></span></p> 
 
   <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-    <input type="radio" class="btn-check" name="btnradio" id="btnradioaceito" autocomplete="off">
+    <input type="radio" class="btn-check" name="btnradio" id="btnradioaceito" autocomplete="off"
+    data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
+    aria-controls="collapseExample" >
     <label class="btn btn-outline-primary" for="btnradioaceito">Aceitar</label>
   
-    <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off" checked>
-    <label class="btn btn-outline-primary" for="btnradio2">Recusar</label>
+    <input type="radio" class="btn-check " name="btnradio" id="btnradio2" autocomplete="off"  
+    data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
+    aria-controls="collapseExample" checked>
+
+    <label class="btn btn-outline-danger" for="btnradio2">Recusar</label>
   </div>
   <br>
 
-  <div class="mt-2">
-    <label for="nova-preoposta">Nova Proposta</label><input type="number" name="" id="nova-preoposta">
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-      <label class="form-check-label" for="flexCheckChecked">
-        Fornecedor pode enviar uma contraproposta
-      </label>
+  <div class="collapse show" id="collapseExample">
+    <div class="card card-body mt-2">
+      <label for="nova-preoposta">Nova Proposta</label><input type="number" name="" id="nova-preoposta">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="pode-nova-proposta" checked>
+        <label class="form-check-label" for="pode-nova-proposta">
+          Fornecedor pode enviar uma contraproposta
+        </label>
+      </div>
     </div>
   </div>
+
 
   <span id="estrutura"></span>
 </div>
@@ -61,7 +69,11 @@
 </div>
 
 <h2>Projeto {{projeto.nome}}</h2>
-
+<form action="" method="post">
+  {% csrf_token %}
+  
+  
+  <input class="btn btn-info mb-1" type="submit" value="Submit" id="methodForm">
 <div class="table-responsive-xxl">
 <table class="table table-bordered table-sm">
   <thead>
@@ -84,7 +96,9 @@
         <td status={{preco.1}} class="preco celula-preco" proposta-fornecedor="{{preco.0}}"
           id='proposta-{{preco.2}}' data-bs-toggle="modal" data-bs-target="#formulario-contra">
           <span></span><span id='preco-raw'>{{ preco.0 }}</span>
-          <input type="text" id="proposta-{{preco.2}}"></td>
+          <input type="text" id="proposta-{{preco.2}}" name="proposta-{{preco.2}}"></td>
+        {% elif preco.1 == 5%}
+        <td>XX.XX</td>
         {% else %}
           <td status={{preco.1}} class="preco" id='proposta-{{preco.2}}'>
           <span></span>{{ preco.0 }}</td>
@@ -96,7 +110,7 @@
   </tbody>
 </table>
 </div>
-
+</form>
 
 <script>
   function setup(){
@@ -109,11 +123,11 @@
         }else if(status == 3){
           status_visivel = '&there4;'
           $(this).attr('style', 'color:green')
-        }else if (status <= 1){
+        }else if (status <= 1 || status == 4){
           status_visivel = '&uarr;'
         }
 
-        $(this).find('span:first-child').html(status_visivel)
+        $(this).find('span:first-child').html(status_visivel + "   ")
       }
     })
   }
@@ -126,15 +140,16 @@
       let proposta = $('#estrutura').text()
 
       if ($('#btnradioaceito').is(':checked')){
-        $("input#"+proposta).val('ACEITO')
-        let novo = $("td#"+proposta).attr('proposta-fornecedor')
-        $("td#"+proposta + '> #preco-raw').text(novo)
-        $("td#"+proposta + '> span:first-child').html('&there4;')
+        $(`input#${proposta}`).val('ACEITO')
+        let novo = $(`td#${proposta}`).attr('proposta-fornecedor')
+        $(`td#${proposta } > #preco-raw`).text(novo)
+        $(`td#${proposta } > span:first-child`).html('&there4;')
       }else{
         let novo = $('#nova-preoposta').val().replace('.', ',')
-        $("input#"+proposta).val('RECUSADO:' + novo)
-        $("td#"+proposta + '> #preco-raw').text(novo)
-        $("td#"+proposta + '> span:first-child').text('*')
+        let forn_novaproposta = $('#pode-nova-proposta').is(':checked')
+        $(`input#${proposta}`).val(`RECUSADO:${novo}:${forn_novaproposta}`)
+        $(`td#${proposta } > #preco-raw`).text(novo)
+        $(`td#${proposta } > span:first-child`).text('*')
       }
 
     })
