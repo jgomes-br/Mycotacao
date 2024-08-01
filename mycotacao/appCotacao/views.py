@@ -1,5 +1,5 @@
 from typing import Any
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.views.generic.detail import DetailView
@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from .models import Projeto, Fornecedor, Lance
 # camada logica
-from .opdb import gravar_resposta_form
+from .opdb import gravar_resposta_form, gravar_resposta_admin
 
 # Create your views here.
 
@@ -25,19 +25,17 @@ def lista_cotacao(request):
 
 class GerenciarProjeto(DetailView):
     model = Projeto
-
-    def colunas(self):
-        return ('fornecedor1', 'fornecedor2', 'fornecedor3')
+    template_name = 'appCotacao/projeto_detail.html'
 
     def tabela(self):
-        temp = {
-            'colunas':('2:fornecedor1', '1:forncedor2', '3:fornecedor3'),
-            'linhas':(
-                ['produto1', [('preco1', 'dono'), 'preco2', 'preco3']],
-                ['produto2', ['preco1', 'preco2', 'preco3']],
-                ['produto3', ['preco1', 'preco2', 'preco3']],
-                )
-        }
+        # temp = {
+        #     'colunas':('2:fornecedor1', '1:forncedor2', '3:fornecedor3'),
+        #     'linhas':(
+        #         ['produto1', [('preco1', 'dono'), 'preco2', 'preco3']],
+        #         ['produto2', ['preco1', 'preco2', 'preco3']],
+        #         ['produto3', ['preco1', 'preco2', 'preco3']],
+        #         )
+        # }
         temp = {'colunas':[], 'linhas':[]}
         proj = self.get_object()
 
@@ -57,18 +55,21 @@ class GerenciarProjeto(DetailView):
 
         return temp
     
+    def post(self, request, *args, **kwargs):
+        for chave, [resposta] in filter(lambda x: x[0].startswith("proposta"), request.POST.lists()):
+            gravar_resposta_admin(chave+":"+resposta, request.user)
+
+        return redirect(request.META['HTTP_REFERER'])
+    
+    def get_object(self):
+        return get_object_or_404(Projeto, pk=self.kwargs['pk'])
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         contexto =  super().get_context_data(**kwargs)
         contexto['tabela'] = self.tabela()
         contexto['eu'] = self.request.user
         
         return contexto
-
-# def gerenciar(request, projeto_id):
-#     pagina = 'appCotacao/gerenciar-cotacao.html'
-#     projeto = Projeto.objects.get(pk=projeto_id)
-#     return render(request, pagina, context={"eu":request.user, 
-#                                             'projeto':projeto})
 
 
 

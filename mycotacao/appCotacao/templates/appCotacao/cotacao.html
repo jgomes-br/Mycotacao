@@ -17,7 +17,7 @@
     <input class="btn btn-info" type="submit" value="Submit" id="methodForm">
   </h1>
     {% for item in estrutura %}
-      <div class="card ">
+      <div class="card">
         <div class="card-header">
           {{ item.produto.descricao }} -
           <span id='status-card' class="badge text-bg-danger">{{ item.get_status_display }}</span>
@@ -81,23 +81,27 @@
     const STATUS_RECUSADO = 'RECUSADO'
     const STATUS_ACEITO = 'ACEITO'
 
-    function recusar_proposta(card_produto) {
+    function recusar_proposta(card_produto, acao) {
       let tabela = card_produto.find('table')
-      tabela.find('tr:nth-last-child(2) > td:last').text('Recusado')
-      card_produto.find('#novo-lance').show()
       card_produto.find('.btn-resposta').hide()
-      // card_produto.find("#btn-desfazer").show()
-      card_produto.find('#resposta > span').text('Voce recusou a proposta')
       card_produto.find('#resposta').show()
       card_produto.removeClass("border-danger")
-      card_produto.find(".status-input").val("RECUSADO")
-      card_produto.find(".input-custo").prop('required',true)
+      tabela.find('tr:eq(-2) > td:last').text('Recusado')
+      if (acao == 'recusar'){
+        card_produto.find('#resposta > span').text('Voce recusou a proposta')
+        card_produto.find(".status-input").val("RECUSADO")
+        card_produto.find('#novo-lance').show()
+        card_produto.find(".input-custo").prop('required',true)
+      }else{
+        card_produto.find(".status-input").val("DECLINAR")
+        card_produto.find('#resposta > span').text('Voce declinou a proposta, não será possivel fazer uma contra proposta')
+      }
 
     }
     
     function aceitar_proposta(card_produto) {
       let tabela = card_produto.find('table')
-      tabela.find('tr:nth-last-child(2) > td:last').text('Aceito')
+      tabela.find('tr:eq(-2) > td:last').text('Aceito')
       card_produto.find('.btn-resposta').hide()
       card_produto.find('#resposta > span').text('Você aceitou a proposta')
       card_produto.find('#resposta').show()
@@ -107,14 +111,14 @@
     
     function desfazer_proposta(card_produto) {
       let tabela = card_produto.find('table')
-      let resposta = tabela.find('tr:nth-last-child(2) > td:last').text()
-      tabela.find('tr:nth-last-child(2) > td:last').text('Pendente')
+      let resposta = tabela.find('tr:eq(-2) > td:last').text()
+      tabela.find('tr:eq(-2) > td:last').text('Pendente')
       card_produto.find('#resposta').hide()
       if (resposta == 'Recusado') {
         tabela.find('tr:last').hide()
       }
     
-      card_produto.find('button').show()
+      card_produto.find('.btn-resposta').show()
       card_produto.addClass("border-danger")
       card_produto.find(".status-input").val("PENDENTE")
       card_produto.find(".input-custo").prop('required',false)
@@ -178,6 +182,14 @@
         }else if(status == perfil){
             $(this).addClass('border-danger')
             $(this).find('.btn-resposta').show()
+        }else if (status == 'nao pode mais dar lance'){
+          $(this).addClass('border-danger')
+          $(this).find('.btn-resposta').find('.btn-danger').text('Declinar')
+          $(this).find('.btn-resposta').show()
+        }
+
+        if (status == 'finalizado sem acordo'){
+          $(this).find('input').remove()
         }
 
       })
@@ -200,9 +212,11 @@
         if (btn_act == 'Aceitar') {
           aceitar_proposta(card_produto)
         } else if (btn_act == 'Recusar') {
-          recusar_proposta(card_produto)
+          recusar_proposta(card_produto, 'recusar')
         } else if (btn_act == 'Desfazer') {
           desfazer_proposta(card_produto)
+        } else if (btn_act == 'Declinar', 'declinar') {
+          recusar_proposta(card_produto)
         }
       })
     })

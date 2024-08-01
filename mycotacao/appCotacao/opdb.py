@@ -27,11 +27,13 @@ def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str):
             
         elif resposta == "RECUSADO":
             lance.status = "R"
-            lance.save()
             Lance(estrutura = estrutura, dono=dono, lance=lance.lance+1, 
                 preco=Decimal(valor.replace(',', '.')), status='P').save()
             estrutura.status = status
-        lance.save()
+        elif resposta == "DECLINAR":
+            lance.status = "R"
+            estrutura.status = '5'
+    lance.save()
     estrutura.save()
 
 
@@ -45,3 +47,41 @@ def create_strutura(projeto: Projeto):
         projeto.estrutura_set.exclude(produto__in=projeto.produto.all()).delete() # type: ignore
     except:
         pass
+
+
+def gravar_resposta_admin(resposta: str, dono):
+    # cod_estrutura é um numero positivo
+    # resposta -> [status, preco, nova_proposta]
+    # status -> [ACEITO, RECUSADO, DECLINADO]
+    # preco numero ou None -> 
+    # nova_proposta -> indicando se o fornecedor pode fazer uma nova proposta
+    ################################################################
+    resposta = resposta + ":::"
+    param = resposta.split(':')
+    status = param[1]
+    if not status:
+        return
+
+    cod_estrutura = int(param[0].replace('proposta-',''))
+    preco = Decimal(param[2].replace(',', '.')) if param[2] else Decimal('0')
+    nova_proposta = param[3]=='true'
+    print(cod_estrutura, status, preco, nova_proposta, param[3] )
+    ################################################################
+
+    estrutura = Estrutura.objects.get(pk=cod_estrutura)
+    lance = estrutura.lance_set.get(status='P') # type: ignore
+
+    if status == 'ACEITO':
+        lance.status = "A"
+        estrutura.status = '3'
+    elif status == 'RECUSADO':
+        if not nova_proposta:
+            estrutura.status = '4'
+        else:
+            estrutura.status = '1'
+        lance.status = "R"
+        Lance(estrutura = estrutura, dono=dono, lance=lance.lance+1, 
+                preco=preco, status='P').save()
+    lance.save()
+    estrutura.save()
+            

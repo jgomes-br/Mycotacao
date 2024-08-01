@@ -33,6 +33,8 @@ class Estrutura(models.Model):
         ('1', 'fornecedor'),
         ('2', 'admim'),
         ('3', 'Finalizado'),
+        ('4', 'Nao Pode mais dar Lance'),
+        ('5', 'Finalizado sem acordo'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
