@@ -33,9 +33,6 @@ def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str):
         elif resposta == "DECLINAR":
             lance.status = "R"
             estrutura.status = '5'
-=======
-            estrutura.status = '3'
->>>>>>> Stashed changes
     lance.save()
     estrutura.save()
 
