@@ -1,41 +1,102 @@
+from abc import ABC
 from .models import Estrutura, Lance
 from decimal import Decimal
 
 from .models import Projeto, Estrutura
 
-def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str):
+STATUS_INICIAL = 'INICIAL'
+STATUS_ACEITO = 'ACEITO'
+STATUS_RECUSADO = 'RECUSADO'
+STATUS_DECLINAR = 'DECLINAR'
+
+ETAPA_ESTRUTURA_FORNECEDOR = '1'
+ETAPA_ESTRUTURA_ADMINISTRADOR = '2'
+ETAPA_ESTRUTURA_FINALIZADA = '3'
+ETAPA_ESTRUTURA_NAO_PODE_LANCE = '4'
+ETAPA_ESTRUTURA_FINALIZADO_SEM_ACORDO = '5'
+
+
+def is_fornecedor(dono):
+    return dono.groups.filter(name='fornecedor').exists()
+
+class RespostaInterface:
+
+    def __init__(self, dono, id_estrutura: int, resposta: str, valor: str|None, pode_proposta: bool) :
+        self.dono = dono
+        self.pode_proposta = pode_proposta
+        self.estrutura= Estrutura.objects.get(pk=id_estrutura)
+        self.resposta = resposta
+        # self.is_fornecedor = dono.groups.filter(name='fornecedor').exists()
+        try:
+            self.is_fornecedor = True if dono.fornecedor else False
+        except:
+            self.is_fornecedor = False
+
+        if valor:
+            self.valor = Decimal(valor.replace(',', '.'))
+
+    def set_lance_pendente(self, status):
+        lance = self.estrutura.lances.get(status='P') # type: ignore
+        lance.status = status
+        lance.save()
+
+    def aceitar_ultimo_lance(self):
+        self.set_lance_pendente('A')
+
+    def recusar_ultimo_lance(self):
+        self.set_lance_pendente('R')
+
+    def criar_lance(self):
+        num_lance = self.estrutura.lances.all().count() +1 # type: ignore
+        lance = Lance(dono=self.dono, lance=num_lance, 
+                    preco=self.valor, status='P')
+        lance.save()
+        self.estrutura.lances.add(lance)
+
+    def set_status_estrutura(self, status):
+        self.estrutura.status = status
+        self.estrutura.save()
+
+class AcoesLances:
+
+    @staticmethod
+    def incial(resposta:RespostaInterface):
+        resposta.criar_lance()
+        resposta.set_status_estrutura(ETAPA_ESTRUTURA_ADMINISTRADOR)
+
+    @staticmethod
+    def aceito(resposta:RespostaInterface):
+        resposta.aceitar_ultimo_lance()
+        resposta.set_status_estrutura(ETAPA_ESTRUTURA_FINALIZADA)
+
+    @staticmethod
+    def recusado(resposta:RespostaInterface):
+        resposta.recusar_ultimo_lance()
+        resposta.criar_lance()
+        if resposta.is_fornecedor:
+            resposta.set_status_estrutura(ETAPA_ESTRUTURA_ADMINISTRADOR)
+        elif not resposta.pode_proposta:
+            resposta.set_status_estrutura(ETAPA_ESTRUTURA_NAO_PODE_LANCE)
+        else:
+            resposta.set_status_estrutura(ETAPA_ESTRUTURA_FORNECEDOR)
+
+    @staticmethod
+    def declinar(resposta:RespostaInterface):
+        resposta.recusar_ultimo_lance()
+        resposta.set_status_estrutura(ETAPA_ESTRUTURA_FINALIZADO_SEM_ACORDO)
+
+
+def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str, pode_nova_proposta=True):
     # precisamos gravar a reposta recbidas da pagina 
-    # lista == []
-    estrutura = Estrutura.objects.get(pk=id_estrutura)
-    
-    print(dono.groups.filter(name='fornecedor').exists())
-    if dono.groups.filter(name='fornecedor').exists():
-        status = '2'
-    else:
-        status = '1'
-
-    if resposta == 'INICIAL':
-        Lance(estrutura = estrutura, dono=dono, lance=1, 
-                preco=Decimal(valor.replace(',', '.')), status='P').save()
-        estrutura.status = status
-    else:
-        lance = estrutura.lance_set.get(status='P') # type: ignore
-    
-        if resposta == "ACEITO":
-            lance.status = "A"
-            estrutura.status = '3'
-            
-        elif resposta == "RECUSADO":
-            lance.status = "R"
-            Lance(estrutura = estrutura, dono=dono, lance=lance.lance+1, 
-                preco=Decimal(valor.replace(',', '.')), status='P').save()
-            estrutura.status = status
-        elif resposta == "DECLINAR":
-            lance.status = "R"
-            estrutura.status = '5'
-    lance.save()
-    estrutura.save()
-
+    resp_i = RespostaInterface(dono, id_estrutura, resposta, valor, pode_nova_proposta)
+    if resposta == STATUS_INICIAL:
+        AcoesLances.incial(resp_i)
+    elif resposta == STATUS_ACEITO:
+        AcoesLances.aceito(resp_i)
+    elif resposta == STATUS_RECUSADO:
+        AcoesLances.recusado(resp_i)
+    elif resposta == STATUS_DECLINAR:
+        AcoesLances.declinar(resp_i)
 
 def create_strutura(projeto: Projeto):
     try:
@@ -63,25 +124,7 @@ def gravar_resposta_admin(resposta: str, dono):
         return
 
     cod_estrutura = int(param[0].replace('proposta-',''))
-    preco = Decimal(param[2].replace(',', '.')) if param[2] else Decimal('0')
+    preco = param[2]
     nova_proposta = param[3]=='true'
-    print(cod_estrutura, status, preco, nova_proposta, param[3] )
-    ################################################################
-
-    estrutura = Estrutura.objects.get(pk=cod_estrutura)
-    lance = estrutura.lance_set.get(status='P') # type: ignore
-
-    if status == 'ACEITO':
-        lance.status = "A"
-        estrutura.status = '3'
-    elif status == 'RECUSADO':
-        if not nova_proposta:
-            estrutura.status = '4'
-        else:
-            estrutura.status = '1'
-        lance.status = "R"
-        Lance(estrutura = estrutura, dono=dono, lance=lance.lance+1, 
-                preco=preco, status='P').save()
-    lance.save()
-    estrutura.save()
+    gravar_resposta_form(dono, cod_estrutura, status, preco, nova_proposta)
             

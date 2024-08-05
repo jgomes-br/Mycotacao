@@ -7,18 +7,6 @@ from .models import Projeto, Produto, Fornecedor
 
 from .opdb import create_strutura
 
-class TesteForm(forms.Form):
-    template_name = "cotacao/form_snippet.html"
-    subject = forms.CharField(max_length=100)
-    message = forms.CharField(widget=forms.Textarea)
-    sender = forms.EmailField()
-    cc_myself = forms.BooleanField(required=False)
-    btn = forms
-
-    def clean(self):
-        cleaned_data = super().clean()
-        # self.add_error("cc_myself", "oi meu amigo")
-
 class ProjectoAdminForm(forms.ModelForm):
     class Meta:
         model = Projeto
@@ -51,15 +39,14 @@ class ProjectoAdminForm(forms.ModelForm):
 
     def save(self, commit=True):
         project = super(ProjectoAdminForm, self).save(commit=False)  
-        if commit:
-            project.save()
+        # if commit:
+        project.save()
 
-        if project.pk:
+        # if project.pk:
             
-            project.produto.set(self.cleaned_data['produtos'])
-            project.fornecedor.set(self.cleaned_data['fornecedores'])
-            # print(project.produto.set)
-            self.save_m2m()
+        project.produto.set(self.cleaned_data['produtos'])
+        project.fornecedor.set(self.cleaned_data['fornecedores'])
+        self.save_m2m()
             
         create_strutura(project)
         

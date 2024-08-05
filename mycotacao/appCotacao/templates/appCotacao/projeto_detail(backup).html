@@ -1,11 +1,7 @@
 {% extends 'appCotacao/base.html' %}
-{% load static %}
-
-{% block ativarangular %}ng-app="app"{% endblock %}
 
 {% block cabecalho %}
-<script type="text/javascript" src="{% static 'appCotacao/js/app-detail-projeto.js' %}"></script>
- <style>
+<style>
   .custom-table {
     font-size: smaller;
   }
@@ -14,26 +10,23 @@
     /* background-color: yellowgreen !important; */
     cursor: pointer;
   }
-  /*
   .celula-preco{
     background-color: yellow !important;
-  }*/
+  }
 </style>
-
 {% endblock %}
 
 {% block content %}
 
 
 <!-- Modal -->
-<div class="modal fade" id="formulario-contra" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" ang-windownewcusto>
+<div class="modal fade" id="formulario-contra" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 <div class="modal-dialog">
 <div class="modal-content">
 <div class="modal-header">
 <h1 class="modal-title fs-5" id="exampleModalLabel">Contra Proposta</h1>
 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
-
 <div class="modal-body">
 
   <p> Proposta fornecedor <span id="proposta-fornecedor"></span></p> 
@@ -41,12 +34,12 @@
   <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
     <input type="radio" class="btn-check" name="btnradio" id="btnradioaceito" autocomplete="off"
     data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
-    aria-controls="collapseExample" value="aceito" ng-model="decisao">
+    aria-controls="collapseExample" >
     <label class="btn btn-outline-primary" for="btnradioaceito">Aceitar</label>
   
     <input type="radio" class="btn-check " name="btnradio" id="btnradio2" autocomplete="off"  
     data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
-    aria-controls="collapseExample" ng-model="decisao" value="recusado">
+    aria-controls="collapseExample" checked>
 
     <label class="btn btn-outline-danger" for="btnradio2">Recusar</label>
   </div>
@@ -54,11 +47,9 @@
 
   <div class="collapse show" id="collapseExample">
     <div class="card card-body mt-2">
-      <label for="nova-preoposta">Nova Proposta</label>
-      <input type="number" ng-model="novopreco" id="nova-preoposta">
-      
+      <label for="nova-preoposta">Nova Proposta</label><input type="number" name="" id="nova-preoposta">
       <div class="form-check">
-        <input class="form-check-input" type="checkbox" checked ng-model="maislance"/>
+        <input class="form-check-input" type="checkbox" value="" id="pode-nova-proposta" checked>
         <label class="form-check-label" for="pode-nova-proposta">
           Fornecedor pode enviar uma contraproposta
         </label>
@@ -77,20 +68,20 @@
 </div>
 </div>
 
+<h2>Projeto {{projeto.nome}}</h2>
 <form action="" method="post">
   {% csrf_token %}
-  <h2> {{projeto.nome}}<input class="btn btn-info mb-1" 
-    type="submit" value="Submit" id="methodForm"></h2>
-
-
+  
+  
+  <input class="btn btn-info mb-1" type="submit" value="Submit" id="methodForm">
 <div class="table-responsive-xxl">
 <table class="table table-bordered table-sm">
   <thead>
     <tr>
       <th scope="col" >PRODUTO</th>
       {% for fornecedor in tabela.colunas %}
-        <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.user_id %}">{{fornecedor.nomeempresa}}</a></th>
-        {% comment %} <th scope="col"><a>{{fornecedor.nomeempresa}} - *{{object.id}}*- *{{fornecedor.user_id}}*</a></th> {% endcomment %}
+        {% comment %} <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.id %}">{{fornecedor.nomeempresa}}</a></th> {% endcomment %}
+        <th scope="col"><a>{{fornecedor.nomeempresa}}</a></th>
       {% endfor %}
       <th scope="col">Ação Massa</th>
     </tr>
@@ -102,15 +93,18 @@
     <tr>
       <td>{{ linha.0 }}</td>
       {% for preco in linha.1 %}
-        <td status={{preco.etapa}} class="preco" 
-          proposta-fornecedor="{{preco.preco}}"
-          id='proposta-{{preco.estrutura}}' ang-cel-preco>
-          <span class="badge"></span>
-          <span class="badge text-bg-secondary">{{preco.num_lances}}</span>
-          <div id='preco-raw' class="text-right">R$ {{ preco.preco }}</div>
-        </td>
+      {% if preco.1 == 2%}
+        <td status={{preco.1}} class="preco celula-preco" proposta-fornecedor="{{preco.0}}"
+          id='proposta-{{preco.2}}' data-bs-toggle="modal" data-bs-target="#formulario-contra">
+          <span></span><span id='preco-raw'>{{ preco.0 }}</span>
+          <input type="text" id="proposta-{{preco.2}}" name="proposta-{{preco.2}}"></td>
+        {% elif preco.1 == 5%}
+        <td>XX.XX</td>
+        {% else %}
+          <td status={{preco.1}} class="preco" id='proposta-{{preco.2}}'>
+          <span></span>{{ preco.0 }}</td>
+      {%endif%}
       {% endfor %}
-      <td>Incuit botão massivo</td>
     </tr>
     {% endfor %}
    
@@ -119,7 +113,7 @@
 </div>
 </form>
 
-{% comment %} <script>
+<script>
   function setup(){
     $('tbody td').each(function(index, data){
       if ($(this).attr('status')) {
@@ -160,7 +154,6 @@
       }
 
     })
-    
     form.addEventListener('show.bs.modal', event => {
       const button = event.relatedTarget
       $('#estrutura').text(button.id)
@@ -168,5 +161,5 @@
     })
 
   })
-</script> {% endcomment %}
+</script>
   {% endblock %}
