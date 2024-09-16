@@ -25,6 +25,11 @@ LanceParam = namedtuple('LanceParam', ['preco', 'etapa', 'estrutura', 'num_lance
 def lista_cotacao(request):
     lista = Projeto.objects.all()
     pagina = 'appCotacao/lista-projetos-fornecedores.html'
+    
+    try:
+        request.user.fornecedor
+    except:
+        return HttpResponseRedirect('/admin')
     return render(request, pagina, context={'projetos': lista})
 
 
@@ -66,7 +71,6 @@ class GerenciarProjeto(DetailView):
     def post(self, request, *args, **kwargs):
         for chave, [resposta] in filter(lambda x: x[0].startswith("proposta"), request.POST.lists()):
             gravar_resposta_admin(chave+":"+resposta, request.user)
-
         return redirect(request.META['HTTP_REFERER'])
     
     def get_object(self):
@@ -81,7 +85,7 @@ class GerenciarProjeto(DetailView):
 
 class Cotacao(ListView):
     model = Estrutura
-
+    template_name = 'appCotacao/cotacao.html'
     def get_queryset(self) -> QuerySet[Any]:
         qr = super().get_queryset()
         projeto_id = self.kwargs['projeto_id']
@@ -101,30 +105,3 @@ class Cotacao(ListView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         contexto =  super().get_context_data(**kwargs)
         return contexto
-
-
-# def cotacao(request, cod_cotacao, forn_id=None):
-
-#     if request.method == "POST":
-#         # print(request.user)
-#         for chave, [resposta, custo] in filter(lambda x: x[0].startswith("resposta"), request.POST.lists()):
-#             gravar_resposta_form(request.user, int(chave.replace("resposta-", "")), resposta, custo)
-#         return HttpResponseRedirect('/')
-    
-#     pr = get_object_or_404(Projeto, pk=cod_cotacao)
-#     if not forn_id:
-#         forn = Fornecedor.objects.get(responsavel=request.user)
-#         perfil = 'FORNECEDOR'
-#     else:
-#         forn = Fornecedor.objects.get(pk=forn_id)
-#         perfil = 'ADMIM'
-
-
-#     estrutura =  pr.estrutura_set.filter(fornecedor__nomeempresa=forn.nomeempresa) # type: ignore
-#     lances = Lance.objects.filter(estrutura__projeto__id=pr.id, estrutura__fornecedor__id=forn.id) # type: ignore
-
-#     return render(request, 'appCotacao/cotacao.html', context={'estrutura':estrutura , 
-#                                                                 'lances':lances, 'projeto': pr, 
-#                                                                 "eu":request.user, 'forn':forn, 'perfil':perfil
-#                                                                 })
-

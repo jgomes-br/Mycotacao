@@ -1,10 +1,9 @@
 {% extends 'appCotacao/base.html' %}
 {% load static %}
-
 {% block ativarangular %}ng-app="app"{% endblock %}
 
 {% block cabecalho %}
-<script type="text/javascript" src="{% static 'appCotacao/js/app-detail-projeto.js' %}"></script>
+
  <style>
   .custom-table {
     font-size: smaller;
@@ -119,54 +118,73 @@
 </div>
 </form>
 
-{% comment %} <script>
-  function setup(){
-    $('tbody td').each(function(index, data){
-      if ($(this).attr('status')) {
-        var status = $(this).attr('status')
-        var status_visivel = ''
-        if (status == 2){
-          status_visivel ='&darr;'
-        }else if(status == 3){
-          status_visivel = '&there4;'
-          $(this).attr('style', 'color:green')
-        }else if (status <= 1 || status == 4){
-          status_visivel = '&uarr;'
+<script>
+
+function upStatusCelula(celula, status, bg){
+  span_status = celula.find('span:eq(0)')
+  span_status.text(status);
+  span_status.removeClassStartingWith('text-bg');
+  span_status.addClass('text-bg-'+bg);
+}
+
+angular.module('app', [])
+.directive('angCelPreco', function(){
+    return function (scope, elem, attr){
+        switch (elem.attr('status')) {
+            case ETAPA_ESTRUTURA_FINALIZADA:
+                upStatusCelula(elem, 'ACORDO', 'success');
+                break;
+            case ETAPA_ESTRUTURA_ADMINISTRADOR:
+                upStatusCelula(elem, 'PROPOSTA', 'warning');
+                elem.attr('data-bs-target', '#formulario-contra');
+                elem.attr('data-bs-toggle', 'modal');
+                elem.addClass('celula-preco');
+                elem.append(`<input type="text" name="${elem.attr('id')}">`)
+                break;
+            case ETAPA_ESTRUTURA_FORNECEDOR:
+                upStatusCelula(elem, 'C.PROPOSTA', 'info');
+                break;
+            case ETAPA_ESTRUTURA_NAO_PODE_LANCE:
+                upStatusCelula(elem, 'C.PROPOSTA', 'info');
+                break;
+            case ETAPA_ESTRUTURA_FINALIZADO_SEM_ACORDO:
+                upStatusCelula(elem, 'S/ACORDO', 'light');
+                break;
+            case ETAPA_ESTRUTURA_START:
+                upStatusCelula(elem, 'START', 'light');
+                break;
         }
 
-        $(this).find('span:first-child').html(status_visivel + "   ")
-      }
-    })
-  }
 
-  $(document).ready(function () {
-    setup()
-    const form = document.getElementById('formulario-contra')
+    }
+})
 
-    $('#btn-save-form').on('click', function(){
-      let proposta = $('#estrutura').text()
+.directive('angWindownewcusto', function(){
+    return function(scope, elem, attr){
+        scope.maislance = true
+        scope.novopreco = 0
+        scope.decisao = 'recusado'
+        var cel;
 
-      if ($('#btnradioaceito').is(':checked')){
-        $(`input#${proposta}`).val('ACEITO')
-        let novo = $(`td#${proposta}`).attr('proposta-fornecedor')
-        $(`td#${proposta } > #preco-raw`).text(novo)
-        $(`td#${proposta } > span:first-child`).html('&there4;')
-      }else{
-        let novo = $('#nova-preoposta').val().replace('.', ',')
-        let forn_novaproposta = $('#pode-nova-proposta').is(':checked')
-        $(`input#${proposta}`).val(`RECUSADO:${novo}:${forn_novaproposta}`)
-        $(`td#${proposta } > #preco-raw`).text(novo)
-        $(`td#${proposta } > span:first-child`).text('*')
-      }
+        elem.on('show.bs.modal', function(event){
+            const item = event.relatedTarget
+            estrutura = item.id
+            cel = $(item)
+            $('#proposta-fornecedor').text(item.getAttribute('proposta-fornecedor'))
+        })
 
-    })
-    
-    form.addEventListener('show.bs.modal', event => {
-      const button = event.relatedTarget
-      $('#estrutura').text(button.id)
-      $('#proposta-fornecedor').text(button.getAttribute('proposta-fornecedor'))
-    })
+        elem.find('#btn-save-form').on('click', function(){
+            if (scope.decisao == 'aceito'){
+                cel.find("input").val('ACEITO')
+                upStatusCelula(cel, '****ACORDO', 'success')
+            }else if(scope.decisao == 'recusado'){
+                upStatusCelula(cel, '*C.PROPOSTA*', 'info')
+                cel.find('#preco-raw').text(scope.novopreco.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'}))
+                cel.find("input").val(`RECUSADO:${scope.novopreco}:${scope.maislance}`)
 
-  })
-</script> {% endcomment %}
+            }
+        })
+    }
+})
+</script>
   {% endblock %}
