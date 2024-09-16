@@ -44,8 +44,7 @@ class Lance(models.Model):
 class Estrutura(models.Model):
     OPCOES_STATUS =(
         ('0', 'start'),
-        ('1', 'fornecedor'),
-        ('2', 'admin'),
+        ('1', 'cotacao'),
         ('3', 'Finalizado'),
         ('4', 'Nao Pode mais dar Lance'),
         ('5', 'Finalizado sem acordo'),
