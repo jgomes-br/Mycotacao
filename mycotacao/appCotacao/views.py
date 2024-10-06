@@ -14,8 +14,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Estrutura, Projeto, Fornecedor, Lance
+from . formularios import CotacaoFormSet
+from .core.cotacao import CotacaoCore
 # camada logica
-from .opdb import gravar_resposta_form, gravar_resposta_admin
+from .opdb import gravar_resposta_form, gravar_resposta_admin, gravar_resposta
 
 # Create your views here.
 
@@ -76,7 +78,7 @@ class GerenciarProjeto(DetailView):
     def get_object(self):
         return get_object_or_404(Projeto, pk=self.kwargs['pk'])
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
         contexto['tabela'] = self.tabela()
         
@@ -98,10 +100,30 @@ class Cotacao(ListView):
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        for chave, [resposta, custo] in filter(lambda x: x[0].startswith("resposta"), request.POST.lists()):
-            gravar_resposta_form(request.user, int(chave.replace("resposta-", "")), resposta, custo)
+        print(list(request.POST.lists()))
+        for resposta, [custo] in filter(lambda x: x[0].startswith("input-resposta"), request.POST.lists()):
+            gravar_resposta(request.user,int(resposta.replace("input-resposta-", "")), custo)
         return HttpResponseRedirect('/')
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
-        return contexto
+        cotacao = CotacaoCore(contexto['object_list'], self.request.user)
+
+        context = {
+            'dados': cotacao,
+        }
+
+        return context
+
+def cotacao_nova(request):
+    cotacao = CotacaoCore(3, 3, request.user)
+
+
+    
+
+    context = {
+        'dados': cotacao,
+    }
+
+    return render(request, 'appCotacao/cotacao2.html', context)
+        

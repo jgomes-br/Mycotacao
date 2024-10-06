@@ -28,6 +28,9 @@ class Projeto(models.Model):
         return self.nome
 
 class Lance(models.Model):
+
+    class Meta:
+        ordering = ['lance']
     OPCOES_STATUS =(
         ('P', 'Pendente'),
         ('A', 'Aceito'),
@@ -43,10 +46,9 @@ class Lance(models.Model):
 
 class Estrutura(models.Model):
     OPCOES_STATUS =(
-        ('0', 'start'),
-        ('1', 'cotacao'),
+        ('1', 'Cotando'),
+        ('2', 'Aceitar ou Recusar'),
         ('3', 'Finalizado'),
-        ('4', 'Nao Pode mais dar Lance'),
         ('5', 'Finalizado sem acordo'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)

@@ -1,7 +1,8 @@
 from django import forms
+from django.forms.models import formset_factory
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
-from .models import Projeto, Produto, Fornecedor
+from .models import Projeto, Produto, Fornecedor, Estrutura
 
 from .opdb import create_strutura
 
@@ -49,3 +50,10 @@ class ProjectoAdminForm(forms.ModelForm):
         create_strutura(project)
         
         return project
+
+class CotacaoForm(forms.Form):
+    produto = forms.CharField(label="Produto", max_length=100)
+
+# IngredientInlineFormset = inlineformset_factory(Recipe, Ingredient, fields='__all__', extra=1)
+CotacaoFormSet = formset_factory(CotacaoForm)
+
