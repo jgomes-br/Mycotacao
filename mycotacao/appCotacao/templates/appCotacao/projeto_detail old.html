@@ -56,12 +56,12 @@
       <label for="nova-preoposta">Nova Proposta</label>
       <input type="number" ng-model="novopreco" id="nova-preoposta">
       
-      {% comment %} <div class="form-check">
+      <div class="form-check">
         <input class="form-check-input" type="checkbox" checked ng-model="maislance"/>
         <label class="form-check-label" for="pode-nova-proposta">
           Fornecedor pode enviar uma contraproposta
         </label>
-      </div> {% endcomment %}
+      </div>
     </div>
   </div>
 
@@ -78,10 +78,8 @@
 
 <form action="" method="post">
   {% csrf_token %}
-  <h2> {{projeto.nome}}
-    <input class="btn btn-success ms-2" type="submit" value="Submit" id="methodForm">
-    <a  class="btn btn-secondary" href="{% url 'baixar' projeto.id %}" download> Download Document </a>
-  </h2>
+  <h2> {{projeto.nome}}<input class="btn btn-info mb-1" 
+    type="submit" value="Submit" id="methodForm"></h2>
 
 
 <div class="table-responsive-xxl">
@@ -89,7 +87,7 @@
   <thead>
     <tr>
       <th scope="col" >PRODUTO</th>
-      {% for fornecedor in projeto.fornecedor.all %}
+      {% for fornecedor in tabela.colunas %}
         <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.user_id %}">{{fornecedor.nomeempresa}}</a></th>
         {% comment %} <th scope="col"><a>{{fornecedor.nomeempresa}} - *{{object.id}}*- *{{fornecedor.user_id}}*</a></th> {% endcomment %}
       {% endfor %}
@@ -98,21 +96,17 @@
 
   </thead>
   <tbody>
-    {% for produto, cotacoes_produto in tabela.cotacoes.items %}
-    <tr>
-      <td>{{ produto }}</td>
-      {% for cotacao in cotacoes_produto %}
-        <td status={{cotacao.status}} class="preco" 
-          proposta-fornecedor="{{cotacao.preco}}"
-          id='proposta-{{cotacao.estrutura}}' ang-cel-preco>
-          <span class="badge"></span>
-          <span class="badge text-bg-secondary">{{cotacao.num_lances}}</span>
-          <div id='preco-raw' class="text-right">R$ {{cotacao.preco}}</div>
-        
-          {% if cotacao.status == 1 %}
-          <input type="text" name="proposta-{{cotacao.codigo}}" hidden/>
-          {%endif%}
 
+    {% for linha in tabela.linhas %}
+    <tr>
+      <td>{{ linha.0 }}</td>
+      {% for preco in linha.1 %}
+        <td status={{preco.etapa}} class="preco" 
+          proposta-fornecedor="{{preco.preco}}"
+          id='proposta-{{preco.estrutura}}' ang-cel-preco>
+          <span class="badge"></span>
+          <span class="badge text-bg-secondary">{{preco.num_lances}}</span>
+          <div id='preco-raw' class="text-right">R$ {{ preco.preco }}</div>
         </td>
       {% endfor %}
       <td>Incuit botão massivo</td>
@@ -136,28 +130,10 @@ function upStatusCelula(celula, status, bg){
 angular.module('app', [])
 .directive('angCelPreco', function(){
     return function (scope, elem, attr){
-      // console.log(elem.attr('status'))
         switch (elem.attr('status')) {
-
-        case "START":
-          upStatusCelula(elem, 'START', 'light');
-          break;
-
-        case "AGUARDANDO":
-          upStatusCelula(elem, 'AGUARDANDO', 'info');
-
-          break;
-
-        case 'FAZER_OU_ACEITAR':
-          upStatusCelula(elem, 'COTAR', 'info');
-          elem.attr('data-bs-target', '#formulario-contra');
-          elem.attr('data-bs-toggle', 'modal');
-        break;
-          
-        case "FINALIZADO_SUCESSO":
-          upStatusCelula(elem, 'ACORDO', 'success');
-          break;
-            /*
+            case ETAPA_ESTRUTURA_FINALIZADA:
+                upStatusCelula(elem, 'ACORDO', 'success');
+                break;
             case ETAPA_ESTRUTURA_ADMINISTRADOR:
                 upStatusCelula(elem, 'PROPOSTA', 'warning');
                 elem.attr('data-bs-target', '#formulario-contra');
@@ -165,13 +141,18 @@ angular.module('app', [])
                 elem.addClass('celula-preco');
                 elem.append(`<input type="text" name="${elem.attr('id')}">`)
                 break;
-              */
-
-
-            case "FINALIZDO_SEM_SUCESSO":
-                upStatusCelula(elem, 'S/ACORDO', 'warning');
+            case ETAPA_ESTRUTURA_FORNECEDOR:
+                upStatusCelula(elem, 'C.PROPOSTA', 'info');
                 break;
-
+            case ETAPA_ESTRUTURA_NAO_PODE_LANCE:
+                upStatusCelula(elem, 'C.PROPOSTA', 'info');
+                break;
+            case ETAPA_ESTRUTURA_FINALIZADO_SEM_ACORDO:
+                upStatusCelula(elem, 'S/ACORDO', 'light');
+                break;
+            case ETAPA_ESTRUTURA_START:
+                upStatusCelula(elem, 'START', 'light');
+                break;
         }
 
 
@@ -194,12 +175,12 @@ angular.module('app', [])
 
         elem.find('#btn-save-form').on('click', function(){
             if (scope.decisao == 'aceito'){
-                cel.find("input").val($('#proposta-fornecedor').text())
+                cel.find("input").val('ACEITO')
                 upStatusCelula(cel, '****ACORDO', 'success')
             }else if(scope.decisao == 'recusado'){
                 upStatusCelula(cel, '*C.PROPOSTA*', 'info')
                 cel.find('#preco-raw').text(scope.novopreco.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'}))
-                cel.find("input").val(`${scope.novopreco}`)
+                cel.find("input").val(`RECUSADO:${scope.novopreco}:${scope.maislance}`)
 
             }
         })

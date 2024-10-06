@@ -6,6 +6,9 @@ from django.shortcuts import get_object_or_404
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.db import transaction
+from django.conf import settings
+
+import os
 
 from collections import namedtuple
 # from django.contrib.auth.models import  User
@@ -14,8 +17,12 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Estrutura, Projeto, Fornecedor, Lance
+from . formularios import CotacaoFormSet
+from .core.cotacao import CotacaoCore
+from .core.tabela_cotacao import TabelaCotacao
+from .core.excel import ExportarExcel
 # camada logica
-from .opdb import gravar_resposta_form, gravar_resposta_admin
+from .opdb import gravar_resposta_form, gravar_resposta_admin, gravar_resposta
 
 # Create your views here.
 
@@ -33,52 +40,35 @@ def lista_cotacao(request):
     return render(request, pagina, context={'projetos': lista})
 
 
+def baixar_cotacao(request, cotacao_id):
+    file_path = os.path.join(settings.MEDIA_ROOT, "temp_cotacao.xlsx")
+    ExportarExcel(file_path)
+
+    with open(file_path, 'rb') as fh:
+        response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
+        response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+        return response
+
 # @login_required(login_url='/accounts/login/')
 class GerenciarProjeto(DetailView):
     model = Projeto
     template_name = 'appCotacao/projeto_detail.html'
-
-    def tabela(self):
-        # temp = {
-        #     'colunas':('2:fornecedor1', '1:forncedor2', '3:fornecedor3'),
-        #     'linhas':(
-        #         ['produto1', [('preco1', 'dono'), 'preco2', 'preco3']],
-        #         ['produto2', ['preco1', 'preco2', 'preco3']],
-        #         ['produto3', ['preco1', 'preco2', 'preco3']],
-        #         )
-        # }
-        temp = {'colunas':[], 'linhas':[]}
-        proj = self.get_object()
-
-        for forn in proj.fornecedor.all(): # type: ignore
-            temp['colunas'].append(forn)
-
-        for prod in proj.produto.all(): # type: ignore
-            lista_p = []
-            for forn in temp['colunas']:
-                est = proj.estrutura_set.get(fornecedor__pk=forn,  # type: ignore
-                                             produto__descricao=prod.descricao)
-                lance =  est.lances.last() 
-                # print(est.lances.all().count())
-                lista_p.append(LanceParam(lance.preco if lance else 0, int(est.status), est.id, est.lances.all().count()))
-
-            temp['linhas'].append([prod.descricao, lista_p])
-
-
-        return temp
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        for chave, [resposta] in filter(lambda x: x[0].startswith("proposta"), request.POST.lists()):
-            gravar_resposta_admin(chave+":"+resposta, request.user)
+        for chave, [custo] in filter(lambda x: x[0].startswith("proposta"), request.POST.lists()):
+            cotacao_id = int(chave.replace("proposta-", ""))
+            # print(cotacao_id, custo, request.user)
+            if (custo != ""):
+                gravar_resposta(request.user,cotacao_id, custo)
         return redirect(request.META['HTTP_REFERER'])
     
     def get_object(self):
         return get_object_or_404(Projeto, pk=self.kwargs['pk'])
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
-        contexto['tabela'] = self.tabela()
+        contexto['tabela'] = TabelaCotacao(self.request.user, self.get_object())
         
         return contexto
 
@@ -98,10 +88,30 @@ class Cotacao(ListView):
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        for chave, [resposta, custo] in filter(lambda x: x[0].startswith("resposta"), request.POST.lists()):
-            gravar_resposta_form(request.user, int(chave.replace("resposta-", "")), resposta, custo)
+        print(list(request.POST.lists()))
+        for resposta, [custo] in filter(lambda x: x[0].startswith("input-resposta"), request.POST.lists()):
+            gravar_resposta(request.user,int(resposta.replace("input-resposta-", "")), custo)
         return HttpResponseRedirect('/')
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
-        return contexto
+        cotacao = CotacaoCore(contexto['object_list'], self.request.user)
+
+        context = {
+            'dados': cotacao,
+        }
+
+        return context
+
+def cotacao_nova(request):
+    cotacao = CotacaoCore(3, 3, request.user)
+
+
+    
+
+    context = {
+        'dados': cotacao,
+    }
+
+    return render(request, 'appCotacao/cotacao2.html', context)
+        

@@ -20,7 +20,6 @@ class Projeto(models.Model):
     nome = models.CharField(max_length=200, unique=True)
     start = models.DateTimeField()
     fim = models.DateTimeField(null=True)
-    lance_atual = models.SmallIntegerField(default=1)
     fornecedor = models.ManyToManyField(Fornecedor)
     produto = models.ManyToManyField(Produto)
     
@@ -28,6 +27,9 @@ class Projeto(models.Model):
         return self.nome
 
 class Lance(models.Model):
+
+    class Meta:
+        ordering = ['lance']
     OPCOES_STATUS =(
         ('P', 'Pendente'),
         ('A', 'Aceito'),
@@ -38,24 +40,22 @@ class Lance(models.Model):
     lance = models.SmallIntegerField()
     preco = models.DecimalField(default=Decimal("0.0"), max_digits=5 ,decimal_places=2)
     status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
-    obs = models.CharField(max_length=100, null=True)
 
 
 class Estrutura(models.Model):
     OPCOES_STATUS =(
-        ('0', 'start'),
-        ('1', 'cotacao'),
+        ('1', 'Cotando'),
+        ('2', 'Aceitar ou Recusar'),
         ('3', 'Finalizado'),
-        ('4', 'Nao Pode mais dar Lance'),
         ('5', 'Finalizado sem acordo'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.CASCADE)
     status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
-    lance_vencedor = models.SmallIntegerField(null=True)
     volume = models.IntegerField(null=True)
     lances = models.ManyToManyField(Lance)
+    total_lances = models.SmallIntegerField(default=4)
     
 
     class Meta:
