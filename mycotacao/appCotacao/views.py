@@ -16,13 +16,12 @@ from collections import namedtuple
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
-from .models import Estrutura, Projeto, Fornecedor, Lance
-from . formularios import CotacaoFormSet
+from .models import Estrutura, Projeto, CustomUser
 from .core.cotacao import CotacaoCore
 from .core.tabela_cotacao import TabelaCotacao
 from .core.excel import ExportarExcel
 # camada logica
-from .opdb import gravar_resposta_form, gravar_resposta_admin, gravar_resposta
+from .opdb import gravar_resposta
 
 # Create your views here.
 
@@ -32,10 +31,7 @@ LanceParam = namedtuple('LanceParam', ['preco', 'etapa', 'estrutura', 'num_lance
 def lista_cotacao(request):
     lista = Projeto.objects.all()
     pagina = 'appCotacao/lista-projetos-fornecedores.html'
-    
-    try:
-        request.user.fornecedor
-    except:
+    if (request.user.is_superuser):
         return HttpResponseRedirect('/admin')
     return render(request, pagina, context={'projetos': lista})
 
@@ -79,12 +75,14 @@ class Cotacao(ListView):
     def get_queryset(self) -> QuerySet[Any]:
         qr = super().get_queryset()
         projeto_id = self.kwargs['projeto_id']
-        try:
-            fornecedor = Fornecedor.objects.get(pk=self.kwargs['fornecedor_id'])
-        except KeyError:
-            fornecedor = self.request.user.fornecedor # type: ignore
 
-        return qr.filter(fornecedor=fornecedor, projeto_id=projeto_id)
+        if (self.request.user.is_staff):
+            self.fornecedor = CustomUser.objects.get(pk=self.kwargs['fornecedor_id'])
+        else:
+            self.fornecedor = self.request.user
+
+        # print(fornecedor.id, fornecedor.is_staff,  projeto_id)
+        return qr.filter(fornecedor=self.fornecedor, projeto_id=projeto_id)
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -99,19 +97,7 @@ class Cotacao(ListView):
 
         context = {
             'dados': cotacao,
+            'fornecedor': self.fornecedor
         }
-
-        return context
-
-def cotacao_nova(request):
-    cotacao = CotacaoCore(3, 3, request.user)
-
-
-    
-
-    context = {
-        'dados': cotacao,
-    }
-
-    return render(request, 'appCotacao/cotacao2.html', context)
         
+        return context

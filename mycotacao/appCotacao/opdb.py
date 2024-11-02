@@ -98,18 +98,6 @@ def gravar_resposta(dono, id_estrutura: int, novo_custo: str):
         # cadastrar o novo custo
         AcoesLances.contra_proposta(resp_i)
 
-def gravar_resposta_form(dono, id_estrutura:int, resposta:str, valor: str, pode_nova_proposta=True):
-    # precisamos gravar a reposta recbidas da pagina 
-    resp_i = RespostaInterface(dono, id_estrutura, resposta, valor, pode_nova_proposta)
-    if resposta == STATUS_INICIAL:
-        AcoesLances.incial(resp_i)
-    elif resposta == STATUS_ACEITO:
-        AcoesLances.aceito(resp_i)
-    elif resposta == STATUS_RECUSADO:
-        AcoesLances.contra_proposta(resp_i)
-    elif resposta == STATUS_DECLINAR:
-        AcoesLances.declinar(resp_i)
-
 def create_strutura(projeto: Projeto):
     try:
         for produto in projeto.produto.all():
@@ -122,21 +110,3 @@ def create_strutura(projeto: Projeto):
         pass
 
 
-def gravar_resposta_admin(resposta: str, dono):
-    # cod_estrutura é um numero positivo
-    # resposta -> [status, preco, nova_proposta]
-    # status -> [ACEITO, RECUSADO, DECLINADO]
-    # preco numero ou None -> 
-    # nova_proposta -> indicando se o fornecedor pode fazer uma nova proposta
-    ################################################################
-    resposta = resposta + ":::"
-    param = resposta.split(':')
-    status = param[1]
-    if not status:
-        return
-
-    cod_estrutura = int(param[0].replace('proposta-',''))
-    preco = param[2]
-    nova_proposta = param[3]=='true'
-    gravar_resposta_form(dono, cod_estrutura, status, preco, nova_proposta)
-            

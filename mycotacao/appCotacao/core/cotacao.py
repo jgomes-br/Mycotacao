@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django import forms
-from ..models import Estrutura, Projeto
+from ..models import Estrutura
 from typing import NamedTuple
 from .apoio import EnumAcesso, EnumStatusEstrutura
 

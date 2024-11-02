@@ -18,9 +18,7 @@
   </div>
 
 <form method="post" action="">
-    <h1>{{ dados.projeto.nome }}
-        <input class="btn btn-info" type="submit" value="Submit" id="methodForm">
-      </h1>
+    <h1>{{ dados.projeto.nome }} / {{fornecedor}}</h1>
 
     {% csrf_token %}
     
@@ -37,10 +35,10 @@
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">Lance</th>
-            <th scope="col">Dono Proposta</th>
-            <th scope="col">Preço</th>
-            <th scope="col">Status</th>
+            <th scope="col" class="text-center">Lance</th>
+            <th scope="col" class="text-center">Dono Proposta</th>
+            <th scope="col" class="text-center">Custo Net</th>
+            <th scope="col" class="text-center">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -48,10 +46,10 @@
           {% for lance in cotacao.lances %}
             
               <tr >
-                <td>{{ lance.lance }}</td>
-                <td> {{ lance.user }}</td>
-                <td>{{ lance.preco }}</td>
-                <td ><span>{{ lance.status }}</span> </td>
+                <td class="text-center">{{ lance.lance }}</td>
+                <td class="text-center"> {{ lance.user }}</td>
+                <td class="text-center">{{ lance.preco }}</td>
+                <td class="text-center"><span>{{ lance.status }}</span> </td>
               </tr>
           {% endfor %}
 
@@ -91,6 +89,11 @@
 
     {% endfor %}
 
+    <div class="mt-2 container">
+      <div class="row">
+        <input class="btn btn-info pull-right" type="submit" value="Enviar" id="methodForm">
+      </div>
+    </div>
  </form>
 
 <script>

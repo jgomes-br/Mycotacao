@@ -6,7 +6,7 @@
     <p>Selecione uma das cotacoes abaixo:</p>
 
     <ul>
-    {% for projeto in user.fornecedor.projeto_set.all %}
+    {% for projeto in user.projeto_set.all %}
         <li><a href="{% url 'cotacao' projeto.id %}">{{ projeto.nome }} - inicio: {{ projeto.start }} - lance atual: {{ projeto.lance_atual}} </a></li>
     {% endfor %}
     </ul>

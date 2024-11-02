@@ -4,7 +4,7 @@ from typing import List, NamedTuple
 from collections import defaultdict
 
 from decimal import Decimal
-from ..models import Projeto, Fornecedor
+from ..models import Projeto, CustomUser
 from .apoio import EnumStatusEstrutura
 
 class EnumStatus(IntEnum):
@@ -20,7 +20,7 @@ class EnumStatus(IntEnum):
 
 class Cotacao(NamedTuple):
     codigo: int
-    fornecedor: Fornecedor
+    fornecedor: CustomUser
     preco: Decimal
     status: EnumStatus
     num_lances: int

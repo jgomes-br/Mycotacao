@@ -90,7 +90,7 @@
     <tr>
       <th scope="col" >PRODUTO</th>
       {% for fornecedor in projeto.fornecedor.all %}
-        <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.user_id %}">{{fornecedor.nomeempresa}}</a></th>
+        <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.id %}">{{fornecedor}}</a></th>
         {% comment %} <th scope="col"><a>{{fornecedor.nomeempresa}} - *{{object.id}}*- *{{fornecedor.user_id}}*</a></th> {% endcomment %}
       {% endfor %}
       <th scope="col">Ação Massa</th>
