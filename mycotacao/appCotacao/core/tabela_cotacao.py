@@ -17,7 +17,6 @@ class EnumStatus(IntEnum):
         return self.name
     
 
-
 class Cotacao(NamedTuple):
     codigo: int
     fornecedor: CustomUser

@@ -24,6 +24,7 @@ class RespostaInterface:
         self.estrutura= Estrutura.objects.get(pk=id_estrutura)
 
         try:
+            self.qtd_lances = len(self.estrutura.lances.all())
             self.ultimo_lance =  self.estrutura.lances.all().latest('lance')
         except:
             self.ultimo_lance = None
@@ -73,6 +74,9 @@ class AcoesLances:
     def contra_proposta(resposta:RespostaInterface):
         resposta.recusar_ultimo_lance()
         resposta.criar_lance()
+        if resposta.qtd_lances == 3:
+            resposta.estrutura.status = '2'
+            resposta.estrutura.save()
 
     @staticmethod
     def declinar(resposta:RespostaInterface):
