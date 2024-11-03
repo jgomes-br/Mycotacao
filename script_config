@@ -1,0 +1,4 @@
+#!/bin/bash
+cp Mycotacao/mycotacao/mycotacao/settings.py Mycotacao/mycotacao/mycotacao/settings_old.py
+cp Mycotacao/settings_site.py Mycotacao/mycotacao/mycotacao/settings.py
+mv Mycotacao/mycotacao/db.sqlite3 .
