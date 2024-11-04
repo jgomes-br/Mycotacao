@@ -37,12 +37,12 @@ def lista_cotacao(request):
 
 
 def baixar_cotacao(request, cotacao_id):
-    file_path = os.path.join(settings.MEDIA_ROOT, "temp_cotacao.xlsx")
-    ExportarExcel(file_path)
+    saida = os.path.join(settings.MEDIA_ROOT, "relatorio.xlsx")
+    ExportarExcel(saida, request.user, Projeto.objects.get(id=cotacao_id))
 
-    with open(file_path, 'rb') as fh:
+    with open(saida, 'rb') as fh:
         response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
-        response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+        response['Content-Disposition'] = 'inline; filename=' + os.path.basename(saida)
         return response
 
 # @login_required(login_url='/accounts/login/')

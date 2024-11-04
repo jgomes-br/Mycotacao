@@ -1,4 +1,3 @@
-from abc import ABC
 from .models import Estrutura, Lance
 from decimal import Decimal
 
@@ -38,9 +37,13 @@ class RespostaInterface:
             self.novo_custo = Decimal(valor.replace(',', '.'))
 
     def set_lance_pendente(self, status):
+        print(" ------------------------------------ ")
+        print(self.estrutura)
+        print(self.estrutura.lances.all())
         lance = self.estrutura.lances.get(status='P') # type: ignore
         lance.status = status
         lance.save()
+
 
     def aceitar_ultimo_lance(self):
         self.set_lance_pendente('A')

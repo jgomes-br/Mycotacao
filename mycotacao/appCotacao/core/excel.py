@@ -1,6 +1,9 @@
-from openpyxl import workbook, load_workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill, Alignment
 import datetime
+import os
+
+from django.conf import settings
 
 from ..models import Projeto
 
@@ -11,6 +14,7 @@ LINHA_INICIAL = 6
 COR_FINALIZADO = PatternFill(start_color="0000FF00", fill_type = "solid")
 COR_SEM_ACORDO = PatternFill(start_color="00FF0000", fill_type = "solid")
 COR_AGUARDANDO = PatternFill(start_color="00808080", fill_type = "solid")
+modelo = os.path.join(settings.MEDIA_ROOT, "modelo.xlsx")
 
 alinhamento_centro=Alignment(horizontal='center',
                     vertical='center',
@@ -20,7 +24,7 @@ alinhamento_centro=Alignment(horizontal='center',
                     indent=0)
 
 def ExportarExcel(endereco_arquivo, user, projeto: Projeto):
-    wb = load_workbook("../modelo.xlsx")
+    wb = load_workbook(modelo)
     ws_cotacao = wb['Cotacao']
     ws_cotacao['B2'] = datetime.datetime.now()
     ws_cotacao['B3'] = projeto.nome

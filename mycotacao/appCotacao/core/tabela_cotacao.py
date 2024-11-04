@@ -30,14 +30,19 @@ class Produto:
 
 class TabelaCotacao:
     def __init__(self, user, projeto: Projeto) -> None:
-        temp = defaultdict(list)
+        temp = dict()
+
+        self.fornecedor = list(projeto.fornecedor.all())
+        total_forn = len(self.fornecedor)
+
+        for prod in projeto.produto.all():
+            temp[prod] = [None]*total_forn
 
         for cotacao in projeto.estrutura_set.all():
             lance = cotacao.lances.last()
             qtd_lances = len(cotacao.lances.all())
 
             status = EnumStatus.AGUARDANDO
-
             if cotacao.status == EnumStatusEstrutura.COTANDO.value:
                 if ((lance is not None) and(lance.dono != user)):
                     status = EnumStatus.FAZER_OU_ACEITAR
@@ -47,6 +52,6 @@ class TabelaCotacao:
                 status = EnumStatus.FINALIZDO_SEM_SUCESSO
 
             preco = Decimal("0") if lance is None else lance.preco
-            temp[cotacao.produto].append(Cotacao(cotacao.id ,cotacao.fornecedor, preco, status, qtd_lances))
+            temp[cotacao.produto][self.fornecedor.index(cotacao.fornecedor)] = (Cotacao(cotacao.id ,cotacao.fornecedor, preco, status, qtd_lances))
 
         self.cotacoes = dict(temp)

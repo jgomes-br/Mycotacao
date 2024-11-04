@@ -1,4 +1,6 @@
 #!/bin/bash
-cp Mycotacao/mycotacao/mycotacao/settings.py Mycotacao/mycotacao/mycotacao/settings_old.py
-cp Mycotacao/settings_site.py Mycotacao/mycotacao/mycotacao/settings.py
-mv Mycotacao/mycotacao/db.sqlite3 .
+# cp mycotacao/mycotacao/settings.py Mycotacao/mycotacao/mycotacao/settings_old.py
+cp settings_site.py mycotacao/mycotacao/settings.py
+mv mycotacao/db.sqlite3 ..
+
+python mycotacao/manager.py collectstatic

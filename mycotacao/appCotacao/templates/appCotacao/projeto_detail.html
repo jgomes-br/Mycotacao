@@ -23,77 +23,25 @@
 
 {% block content %}
 
-
-<!-- Modal -->
-<div class="modal fade" id="formulario-contra" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" ang-windownewcusto>
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header">
-<h1 class="modal-title fs-5" id="exampleModalLabel">Contra Proposta</h1>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-
-<div class="modal-body">
-
-  <p> Proposta fornecedor <span id="proposta-fornecedor"></span></p> 
-
-  <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-    <input type="radio" class="btn-check" name="btnradio" id="btnradioaceito" autocomplete="off"
-    data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
-    aria-controls="collapseExample" value="aceito" ng-model="decisao">
-    <label class="btn btn-outline-primary" for="btnradioaceito">Aceitar</label>
-  
-    <input type="radio" class="btn-check " name="btnradio" id="btnradio2" autocomplete="off"  
-    data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="true" 
-    aria-controls="collapseExample" ng-model="decisao" value="recusado">
-
-    <label class="btn btn-outline-danger" for="btnradio2">Recusar</label>
-  </div>
-  <br>
-
-  <div class="collapse show" id="collapseExample">
-    <div class="card card-body mt-2">
-      <label for="nova-preoposta">Nova Proposta</label>
-      <input type="number" ng-model="novopreco" id="nova-preoposta">
-      
-      {% comment %} <div class="form-check">
-        <input class="form-check-input" type="checkbox" checked ng-model="maislance"/>
-        <label class="form-check-label" for="pode-nova-proposta">
-          Fornecedor pode enviar uma contraproposta
-        </label>
-      </div> {% endcomment %}
-    </div>
-  </div>
-
-
-  <span id="estrutura"></span>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-<button type="button" class="btn btn-primary" id="btn-save-form" data-bs-dismiss="modal">Save changes</button>
-</div>
-</div>
-</div>
-</div>
-
 <form action="" method="post">
   {% csrf_token %}
   <h2> {{projeto.nome}}
-    <input class="btn btn-success ms-2" type="submit" value="Submit" id="methodForm">
+    <input class="btn btn-success ms-2" type="submit" value="Salvar" id="methodForm">
     <a  class="btn btn-secondary" href="{% url 'baixar' projeto.id %}" download> Download Document </a>
+    <a class="btn btn-secondary" href="/admin/appCotacao/projeto/">Ir Home</a>
   </h2>
 
 
-<div class="table-responsive-xxl">
-<table class="table table-bordered table-sm">
+<div class="table-responsive">
+<table class="table table-bordered">
   <thead>
     <tr>
       <th scope="col" >PRODUTO</th>
-      {% for fornecedor in projeto.fornecedor.all %}
+      {% for fornecedor in tabela.fornecedor %}
         <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.id %}">{{fornecedor}}</a></th>
         {% comment %} <th scope="col"><a>{{fornecedor.nomeempresa}} - *{{object.id}}*- *{{fornecedor.user_id}}*</a></th> {% endcomment %}
       {% endfor %}
-      <th scope="col">Ação Massa</th>
+
     </tr>
 
   </thead>
@@ -107,15 +55,14 @@
           id='proposta-{{cotacao.estrutura}}' ang-cel-preco>
           <span class="badge"></span>
           <span class="badge text-bg-secondary">{{cotacao.num_lances}}</span>
-          <div id='preco-raw' class="text-right">R$ {{cotacao.preco}}</div>
-        
-          {% if cotacao.status == 1 %}
-          <input type="text" name="proposta-{{cotacao.codigo}}" hidden/>
-          {%endif%}
+          <span id='preco-raw' class="text-right">R$ {{cotacao.preco}}
+            {% if cotacao.status == 1 %}
+            <input type="number" name="proposta-{{cotacao.codigo}}" style="width: 60px" min="1"/>
+            {%endif%}
+          </span>
 
         </td>
       {% endfor %}
-      <td>Incuit botão massivo</td>
     </tr>
     {% endfor %}
    
@@ -144,33 +91,21 @@ angular.module('app', [])
           break;
 
         case "AGUARDANDO":
-          upStatusCelula(elem, 'AGUARDANDO', 'info');
+          upStatusCelula(elem, 'FORNECEDOR', 'info');
 
           break;
 
         case 'FAZER_OU_ACEITAR':
-          upStatusCelula(elem, 'COTAR', 'info');
-          elem.attr('data-bs-target', '#formulario-contra');
-          elem.attr('data-bs-toggle', 'modal');
+          upStatusCelula(elem, 'COTAR', 'primary');
         break;
           
         case "FINALIZADO_SUCESSO":
           upStatusCelula(elem, 'ACORDO', 'success');
           break;
-            /*
-            case ETAPA_ESTRUTURA_ADMINISTRADOR:
-                upStatusCelula(elem, 'PROPOSTA', 'warning');
-                elem.attr('data-bs-target', '#formulario-contra');
-                elem.attr('data-bs-toggle', 'modal');
-                elem.addClass('celula-preco');
-                elem.append(`<input type="text" name="${elem.attr('id')}">`)
-                break;
-              */
 
-
-            case "FINALIZDO_SEM_SUCESSO":
-                upStatusCelula(elem, 'S/ACORDO', 'warning');
-                break;
+        case "FINALIZDO_SEM_SUCESSO":
+            upStatusCelula(elem, 'S/ACORDO', 'warning');
+            break;
 
         }
 
@@ -178,32 +113,5 @@ angular.module('app', [])
     }
 })
 
-.directive('angWindownewcusto', function(){
-    return function(scope, elem, attr){
-        scope.maislance = true
-        scope.novopreco = 0
-        scope.decisao = 'recusado'
-        var cel;
-
-        elem.on('show.bs.modal', function(event){
-            const item = event.relatedTarget
-            estrutura = item.id
-            cel = $(item)
-            $('#proposta-fornecedor').text(item.getAttribute('proposta-fornecedor'))
-        })
-
-        elem.find('#btn-save-form').on('click', function(){
-            if (scope.decisao == 'aceito'){
-                cel.find("input").val($('#proposta-fornecedor').text())
-                upStatusCelula(cel, '****ACORDO', 'success')
-            }else if(scope.decisao == 'recusado'){
-                upStatusCelula(cel, '*C.PROPOSTA*', 'info')
-                cel.find('#preco-raw').text(scope.novopreco.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'}))
-                cel.find("input").val(`${scope.novopreco}`)
-
-            }
-        })
-    }
-})
 </script>
   {% endblock %}
