@@ -57,7 +57,7 @@
           <span class="badge text-bg-secondary">{{cotacao.num_lances}}</span>
           <span id='preco-raw' class="text-right">R$ {{cotacao.preco}}
             {% if cotacao.status == 1 %}
-            <input type="number" name="proposta-{{cotacao.codigo}}" style="width: 60px" min="1"/>
+            <input type="number" step="0.01" name="proposta-{{cotacao.codigo}}" style="width: 60px" min="1"/>
             {%endif%}
           </span>
 

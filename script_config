@@ -3,4 +3,4 @@
 cp settings_site.py mycotacao/mycotacao/settings.py
 mv mycotacao/db.sqlite3 ..
 
-python mycotacao/manager.py collectstatic
+python mycotacao/manage.py collectstatic
