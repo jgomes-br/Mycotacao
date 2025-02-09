@@ -6,9 +6,9 @@
 
 ## 🚀 Funcionalidades
 - 📊 **Cadastro de produtos**: Permite o registro de novos produtos para cotação.
-- 📊 **Cadastro de Fornecedores e Compradores**: Permite o registro de novos produtos para cotação.
-- 🔍 **Consulta de preços**: Verificação e comparação de preços cadastrados.
-- 📅 **Histórico de cotações**: Acompanhamento da evolução dos preços.
+- 📊 **Cadastro de Fornecedores e Compradores**: Permite o registro de novos colaboradores para cotação.
+- 🔍 **Analise de custos**: Verificação e comparação custos cadastrados.
+- 📅 **Histórico de cotações**: Acompanhamento da evolução dos custos.
 - 👤 **Autenticação de usuários**: Controle de acesso com login e senha.
 
 ## 🛠️ Tecnologias Utilizadas
