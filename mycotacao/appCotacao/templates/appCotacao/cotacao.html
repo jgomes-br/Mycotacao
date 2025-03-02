@@ -2,182 +2,265 @@
 {% load removespaces %}
 {% block ativarangular %}ng-app="app"{% endblock %}
 {% block content %}
+<!-- Injeta os dados do Django de forma segura -->
+{{ dados|json_script:"dados-json" }}
 
-<style>
-  .ng-hide:not(.ng-hide-animate) {
-    /* These are just alternative ways of hiding an element */
-    display: block!important;
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
-</style>
 
-<div id="alerta-proposta-incompleta" class="alert alert-danger" role="alert" style="display:none">
-    Favor responder as proposta!
+{{dados}}
+{% verbatim %}
+<div ng-controller="CotacaoController">
+
+  <!-- Alerta de erro na proposta -->
+  <div id="alerta-proposta-incompleta" class="alert alert-danger" role="alert" ng-show="erroProposta">
+    Favor responder as propostas!
   </div>
 
-<form method="post" action="">
-    <h1>{{ dados.projeto.nome }} / {{fornecedor}}</h1>
+  <!-- Formulário com AngularJS (ng-submit substitui o evento de submit via jQuery) -->
+  <form name="bidForm" ng-submit="submitForm()" novalidate>
 
-    {% csrf_token %}
-    
+    <!-- {{dados}} -->
 
+    <h1>{{ dados.projeto_name }} </h1>
 
-    {% for cotacao in dados.cotacoes %}
-    <div class="card mb-1" ang-cotacao-produto>
-        <div class="card-header">
-            {{cotacao.produto}} -
-          <span id='status-card'>{{ cotacao.status }}</span>
-          <span>{{cotacao.qtd_lances}} / {{ cotacao.qtd_max_lances }}</span>
-        </div>
+    <!-- Loop para cada cotação -->
+    <div class="card mb-1" ng-repeat="cotacao in dados.produtos_cotados" 
+      >
+      <div class="card-header">
+        {{ cotacao.produto }} -
+        <span ng-class="{
+                'badge bg-warning text-dark': cotacao.status.cod == STATUS.R_CONTRA_PROPOSTA.cod,
+                'badge bg-success': ((cotacao.status.cod == STATUS.FINALIZADO_COM_ACORDO.cod) || 
+                                        (cotacao.status.cod == STATUS.R_ACEITOU.cod)),
+                'badge bg-primary': cotacao.status.cod == STATUS.COTANDO.cod
+              }">
+          {{ cotacao.status.desc }}
+        </span>
+        <span>- {{ cotacao.qtd_lances }} / {{ cotacao.qtd_max_lances }}</span>
+      </div>
 
       <table class="table">
         <thead>
           <tr>
-            <th scope="col" class="text-center">Lance</th>
-            <th scope="col" class="text-center">Dono Proposta</th>
-            <th scope="col" class="text-center">Custo Net</th>
-            <th scope="col" class="text-center">Status</th>
+            <th class="text-center">Lance</th>
+            <th class="text-center">Dono Proposta</th>
+            <th class="text-center">Custo Net</th>
+            <th class="text-center">Status</th>
           </tr>
         </thead>
         <tbody>
-          
-          {% for lance in cotacao.lances %}
-            
-              <tr >
-                <td class="text-center">{{ lance.lance }}</td>
-                <td class="text-center"> {{ lance.user }}</td>
-                <td class="text-center">{{ lance.preco }}</td>
-                <td class="text-center"><span>{{ lance.status }}</span> </td>
-              </tr>
-          {% endfor %}
+          <!-- Listagem dos lances já efetuados -->
+          <tr ng-repeat="lance in cotacao.lances">
+            <td class="text-center">{{ lance.lance }}</td>
+            <td class="text-center">{{ lance.user }}</td>
+            <td class="text-center">{{ lance.preco }}</td>
+            <td class="text-center">
+              <span ng-class="{
+                      'badge bg-warning text-dark': lance.status == 'Pendente',
+                      'badge bg-success': lance.status == 'Aceito'
+                    }">
+                {{ lance.status }}
+              </span>
+            </td>
+          </tr>
 
-
-          {{cotacao.acesso }}
-          {% if cotacao.acesso <= 2 %}
-
-            <tr id="novo-lance" class="{{ cotacao.acesso }}" {% if cotacao.acesso.value <= 2%} 
-              style="display:none;" {%endif%}>
-              <td>Novo</td>
-              <td>Eu</td>
-              <td>
-              <div id="entrada" class="input-group input-group-sm col-sm-10" style="width: 100px;">
-                  <span class="input-group-text">$</span>
-                  <input type="text" name="input-resposta-{{cotacao.id}}" class="form-control input-custo" pattern="^([0-9]+)(,[0-9]{1,2})?$"/>
+          <tr ng-if="cotacao.exibirEditor">
+            <td class="text-center">Novo</td>
+            <td class="text-center">Eu</td>
+            <td class="text-center">
+              <div class="input-group input-group-sm col-sm-10" style="width: 100px;">
+                <span class="input-group-text">$</span>
+                <input type="text" class="form-control"
+                  pattern="^([0-9]+)(,[0-9]{1,2})?$" ng-model="cotacao.contraproposta" required min="1" />
               </div>
-              </td>
-              <td><span>Pendente</span></td>
-            </tr>
-
-            {% endif %}
-
+            </td>
+            <td class="text-center">
+              <span>Pendente</span>
+            </td>
+          </tr>
 
         </tbody>
       </table>
-      {% if cotacao.acesso <= 2 %}
-        {% if cotacao.ultimo_lance != None %}
-            <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                <input type="radio" class="btn-check" name="cotacao-{{cotacao.id}}" id="aceito-{{cotacao.id}}" autocomplete="off">
-                <label class="btn btn-outline-success" for="aceito-{{cotacao.id}}">Aceitar</label>
-            
-                <input type="radio" class="btn-check" name="cotacao-{{cotacao.id}}" id="recusado-{{cotacao.id}}" autocomplete="off">
-                <label class="btn btn-outline-danger" for="recusado-{{cotacao.id}}">recusar</label>
-            </div>
-        {% endif %}
-      {% endif %}
 
-    </div>
+      <!-- Botões para aceitar ou recusar se houver um último lance e acesso permitido -->
+      <div ng-if="cotacao.podeAprovarRecusar" class="btn-group" role="group"
+        aria-label="Basic radio toggle button group">
 
-    {% endfor %}
+        <input type="radio" class="btn-check" ng-model="cotacao.decisao" id="aceito-{{cotacao.id}}" value="aceito"
+          style="display:none;" autocomplete="off">
+        <label class="btn btn-outline-success" for="aceito-{{cotacao.id}}"
+          ng-click="aceitarCotacao(cotacao)">Aceitar</label>
 
-    {% if dados.botao_enviar %}
-    <div class="mt-2 container">
-      <div class="row">
-        <input class="btn btn-info pull-right" type="submit" value="Enviar" id="methodForm">
+        <input type="radio" class="btn-check" ng-model="cotacao.decisao" id="recusado-{{cotacao.id}}" value="recusado"
+          style="display:none;" autocomplete="off">
+        <label class="btn btn-outline-danger" ng-click="recusarCotacao(cotacao)" for="recusado-{{cotacao.id}}">
+          Recusar
+        </label>
       </div>
     </div>
-    {%endif%}
- </form>
+    {% endverbatim %}
+    <!-- Botão de envio condicional -->
+    <button type="submit" class="btn btn-info" ng-if="botao_enviar">Enviar</button>
+  </form>
+  <script>
 
-<script>
-  
+    angular.module('app', [])
+      .constant('STATUS', {
+        INICIAL: {cod: 0, desc: 'Inicial'},
+        COTANDO: {cod: 1, desc: 'COTANDO'},
+        CHECK_MATE: {cod: 2, desc: 'CHECK MATE'},
+        FINALIZADO_COM_ACORDO: {cod: 3, desc: 'FINALIZADO COM ACORDO'},
+        FINALIZADO_SEM_ACORDO: {cod: 5, desc: 'FINALIZADO SEM ACORDO'},
+        RESPOSTA: {cod: 9, desc: ''},
+        R_ACEITOU: {cod: 10, desc: 'Aceito'},
+        R_CONTRA_PROPOSTA: {cod: 11, desc: 'Contra Proposta'},
+        R_RECUSOU: {cod: 12, desc: 'Recusado (Não é possivel fazer nova proposta)'},
 
-  angular.module('app', [])
-  .directive('angCotacaoProduto', function(){
-    return {
-      scope: {
-        
-      },
-      link: function(scope, elem, attr){
-          elem.find('span:contains(Pendente)').addClass("badge bg-warning text-dark")
-          elem.find('span:contains(Aceito)').addClass("badge bg-success")
-          elem.find('span:contains(Finalizado)').addClass("badge bg-success")
-          elem.find('span:contains(Cotando)').addClass("badge bg-primary")
+      })
+      .config(['$httpProvider', function($httpProvider) {
+        $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+        $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
+      }])
+      .controller('CotacaoController', ['$scope', '$http', 'STATUS', function ($scope, $http, STATUS) {
+        // Torna a constante acessível no template
+        $scope.STATUS = STATUS;
+        $scope.dados = JSON.parse(document.getElementById('dados-json').textContent);
+        $scope.botao_enviar = false;
 
-        elem.find('.btn-check').on('click', function(){
-          let linha_nova_cotacao = elem.find('#novo-lance.podecotar')
-          let status_proposta = elem.find('tr:eq(-2) > td:last > span')
-          let input_custo =  elem.find('.input-custo')
-          if($(this).attr('id').startsWith('recusado')){
-            status_proposta.text('Recusado')
-            linha_nova_cotacao.show()
-            if(linha_nova_cotacao.length == 0){
-              input_custo.val(999)
+        function getUltimoLance(cotacao) {
+          return cotacao.lances.slice(-1)[0] || null;
+        }
+
+        // #region Aceitar ou Recusar 
+        angular.forEach($scope.dados.produtos_cotados, function (cotacao) {
+          // (cotacao.status === STATUS.R_CONTRA_PROPOSTA || 
+          // (cotacao.status == STATUS.INICIAL && !dados.user_atual.is_staff))
+          cotacao.exibirEditor = false
+          function aceitar_recusar(cotacao) {
+            if (cotacao.lances.length === 0) {
+              cotacao.status = STATUS.INICIAL;
+              if (!$scope.dados.user_atual.is_staff){
+                cotacao.exibirEditor = true
+              }
+              cotacao.podeAprovarRecusar = false;
+              cotacao.editarContraProposta = true;
+              $scope.botao_enviar = true;
             }else{
-            input_custo.val(0)}
-            
-          }else{
-            let valor = elem.find('tr:eq(-2) > td:eq(-2)').text()
-            input_custo.val(valor)
-            status_proposta.text('Aceito')
-            linha_nova_cotacao.hide()
+              user_ultimo_lance = getUltimoLance(cotacao) || '';
+              if (cotacao.status.cod == STATUS.COTANDO.cod && user_ultimo_lance.user != 'Eu') {
+                cotacao.podeAprovarRecusar = true;
+                cotacao.editarContraProposta = true;
+                $scope.botao_enviar = true;
+              } else if (cotacao.status.cod == STATUS.CHECK_MATE.cod && user_ultimo_lance.user != 'Eu') {
+                cotacao.status = STATUS.CHECK_MATE;
+                cotacao.podeAprovarRecusar = true;
+                $scope.botao_enviar = true;
+                cotacao.editarContraProposta = false;
+              } else {
+                cotacao.podeAprovarRecusar = false;
+              }
+            }
+
+          };
+
+          function formatarCusto(cotacao) {
+            cotacao.lances.forEach(function (lance) {
+              lance.preco = lance.preco.replace('.', ',')
+            })
+          };
+
+          function converter_status(cotacao){
+
           }
+          // Aqui você pode usar a lógica que desejar para definir a propriedade.
+          // Por exemplo, se cotacao.status for 'cotando' e a propriedade ultimo_lance não for 'Eu':
+          aceitar_recusar(cotacao);
+          formatarCusto(cotacao);
+        });
+        // #endregion
+        $scope.erroProposta = false;
 
-          elem.find('td > span ').attr("class", "")
-          elem.find('span:contains(Aceito)').addClass("badge bg-success")
-          elem.find('span:contains(Pendente)').addClass("badge bg-warning text-dark")
-        })
+        // Função para aceitar a cotação: atualiza o status e, se necessário, outros valores
+        $scope.aceitarCotacao = function (cotacao) {
+          cotacao.status = STATUS.R_ACEITOU;
+          var lance = getUltimoLance(cotacao);
+          lance.status = 'Aceito';
+          cotacao.contraproposta = lance.preco;
+          cotacao.exibirEditor = false;
+        };
 
 
-        } 
-      }
-  })
+        // Função para recusar a cotação: atualiza o status e limpa ou ajusta o valor do lance
+        $scope.recusarCotacao = function (cotacao) {
+          if(cotacao.editarContraProposta){
+            cotacao.status = STATUS.R_CONTRA_PROPOSTA;
+            cotacao.contraproposta = 0; // ou outro valor que indique recusa
+            cotacao.exibirEditor = true
+          }else{
+            cotacao.contraproposta = 999; // ou outro valor que indique recusa
+            cotacao.status = STATUS.R_RECUSOU;
+          }
+          
+          getUltimoLance(cotacao).status = 'Recusado';
+        };
 
-  function validacao(){
-      
-    $("#alerta-proposta-incompleta").hide()
-    var ha_erro = false
 
-    $("input.input-custo").each(function(pos, caixa){
-      if ($(this).val() <= 0) {
-        $(this).closest('.card').addClass("border-danger")
-        ha_erro = true
-      }else 
-        $(this).closest('.card').removeClass("border-danger")
-    })
+        // Função de submissão do formulário com validação usando AngularJS
+        $scope.submitForm = function () {
+          // Validar formulario
+          function tem_erro(){
+            var erro = false;
+            angular.forEach($scope.dados.produtos_cotados, function (cotacao) {
+                if (cotacao.podeAprovarRecusar === true ){
+                  if (cotacao.status.cod < STATUS.RESPOSTA.cod) {
+                    // ainda não respondeu
+                    erro = true;
+                  }else if (cotacao.status.cod == STATUS.R_CONTRA_PROPOSTA.cod && !cotacao.contraproposta){
+                    // contra proposta sem valor
+                    erro = true;
+                  }
+                }else if(cotacao.status === STATUS.INICIAL && !cotacao.contraproposta){
+                  erro = true;
+                };
+              });
+              return erro;
+          };
 
-    if (ha_erro){
-      $("#alerta-proposta-incompleta").show()
-      return false
-    }else{
-      return true
-    }
+          if (tem_erro()){
+            $scope.erroProposta = true;
+            return;
+          }
+          $scope.erroProposta = false;
 
-  }
+          // Cria um novo array contendo somente os dados que interessam de cada cotação.
+          var payload = $scope.dados.produtos_cotados
+            .filter(function(cotacao) {
+              return cotacao.podeAprovarRecusar === true || cotacao.status === STATUS.INICIAL;
+            })
+            .map(function(cotacao) {
+              return {
+                id: cotacao.id, // se precisar identificar cada cotação
+                status_aceito: (cotacao.status === STATUS.R_ACEITOU),
+                contraproposta: cotacao.contraproposta || 0
+              };
+            });
+          
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('form')
-    form.addEventListener('submit', event => {
-      // submit event detected
-      event.preventDefault()
-     if(validacao()){
+        // Envia os dados em JSON para a URL definida no backend (ajuste '/minha-url/' conforme necessário)
+        $http.post(window.location.pathname, payload)
+          .then(function(response) {
+            // Sucesso: trate a resposta aqui se necessário.
+            window.location.reload();
+          }, function(error) {
+            // Em caso de erro, trate-o aqui.
+            alert("Erro ao enviar os dados!");
+          });
+          
+        };
+      }]);
+  </script>
 
-       $("form").submit()
-     }  
+</div>
 
-    })
-  })
-</script>
 
- {% endblock %}
+
+{% endblock %}

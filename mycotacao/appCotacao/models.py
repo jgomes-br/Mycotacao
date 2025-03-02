@@ -41,29 +41,13 @@ class Lance(models.Model):
         ('P', 'Pendente'),
         ('A', 'Aceito'),
         ('R', 'Recusado'),
-        ('S', 'Avançou sem resposta')
-    )
-    dono = models.ForeignKey(CustomUser,verbose_name = 'User', on_delete=models.CASCADE)
-    lance = models.SmallIntegerField()
-    preco = models.DecimalField(default=Decimal("0.0"), max_digits=5 ,decimal_places=2)
-    status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
-
-
-class Estrutura(models.Model):
-    OPCOES_STATUS =(
-        ('1', 'Cotando'),
-        ('2', 'Aceitar ou Recusar'),
-        ('3', 'Finalizado'),
-        ('5', 'Finalizado sem acordo'),
-    )
+        ('D', 'Desistiu'),
+    )   
+    data = models.DateTimeField(auto_now_add=True)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
-    fornecedor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    fornecedor = models.ForeignKey(CustomUser,verbose_name = 'User', on_delete=models.CASCADE)
+    dono = models.ForeignKey(CustomUser, related_name='dono', on_delete=models.CASCADE)
+    numero = models.SmallIntegerField()
+    preco = models.DecimalField(default=Decimal("0.0"), max_digits=5 ,decimal_places=2)
     status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
-    volume = models.IntegerField(null=True)
-    lances = models.ManyToManyField(Lance)
-    total_lances = models.SmallIntegerField(default=4)
-    
-    class Meta:
-        unique_together  = [["produto", "fornecedor", "projeto"]]
-
