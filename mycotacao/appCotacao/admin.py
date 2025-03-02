@@ -18,7 +18,7 @@ class ProjetoAdmin(admin.ModelAdmin):
     # model = Projeto
 
     list_display = ('nome', 'start', 'acao')
-    filter_horizontal = ('produto', 'fornecedor')
+    filter_horizontal = ('produtos', 'fornecedores')
 
     def acao(self, obj):
          return mark_safe(f'<a href="/gerenciar/{obj.id}">Gerenciar</a>')

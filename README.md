@@ -3,6 +3,7 @@
 ## 📌 Visão Geral
 **MyCotacao** é um web app desenvolvido em Python com Django para auxiliar na gestão de cotações de produtos. O objetivo principal do projeto é fornecer uma plataforma eficiente para fazer contações entre compradores e vendedores, em um formato de leilão.
 
+![MyCotacao Screenshot](wireframe/forncedor.png)
 
 ## 🚀 Funcionalidades
 - 📊 **Cadastro de produtos**: Permite o registro de novos produtos para cotação.

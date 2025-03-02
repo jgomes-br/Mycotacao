@@ -3,283 +3,115 @@
 {% block ativarangular %}ng-app="app"{% endblock %}
 
 {% block cabecalho %}
-<style>
-  /* Ajustes do cabeçalho */
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
 
-  .page-header h3 {
-    margin: 0;
-  }
-
-  .btn-group-header {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  /* Ajustes para a tabela */
-  .table thead th {
-    vertical-align: middle;
-    text-align: center;
-    background-color: rgb(0, 110, 255);
-    color: white;
-  }
-
-  .bg-secondary,
-  .bg-success {
-    color: #fff !important;
-  }
-
-  .table tbody td {
-    vertical-align: middle;
-    text-align: left;
-
-  }
-
-
+ <style>
   .custom-table {
-    min-width: 1000px;
-    border-collapse: collapse;
+    font-size: smaller;
   }
 
-  .custom-table thead th:first-child,
-  .custom-table tbody td:first-child {
-    position: sticky;
-    left: 0;
-    background: #fff;
-    /* Define um background para evitar transparência */
-    z-index: 2;
+  .celula-preco:hover{
+    /* background-color: yellowgreen !important; */
+    cursor: pointer;
   }
-
-  /* Coloca uma borda diferenciada */
-  table th:nth-child(even),
-  table th:nth-child(odd),
-  table td:nth-child(odd) {
-    border-right: 2px solid rgb(0, 0, 0);
-  }
-
-
-  /* Remove o controle no input box, Para Chrome, Safari, Edge (baseado em Chromium) */
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  /* Se desejar que o cabeçalho da primeira coluna fique acima das demais células */
-  /* .custom-table thead th:first-child {
-    z-index: 3;
-  } */
+  /*
+  .celula-preco{
+    background-color: yellow !important;
+  }*/
 </style>
+
 {% endblock %}
 
 {% block content %}
-{{ dados|json_script:"dados-json" }}
 
-{% verbatim %}
-
-<body class="container mt-4" ng-controller="CotacaoController">
-  <!-- Cabeçalho da Página -->
-  <div class="page-header">
-    <h3>{{dados.projeto.nome}}</h3>
-    <div class="btn-group-header">
-      <button class="btn btn-success" ng-click="salvar()">Salvar</button>
-      <!-- <button class="btn btn-secondary" ng-click="downloadDoc()">Download Document</button> -->
-      <a class="btn btn-secondary" href="/baixar/{{dados.projeto.id}}" download> Download Document </a>
-      <a class="btn btn-outline-primary" href="/admin/appCotacao/projeto/">Home</a>
-    </div>
-  </div>
-
-  <form name="bidForm" ng-submit="submitForm()" novalidate>
-    <!-- Tabela de Cotações -->
-    <div class="table-responsive">
-      <table class="table custom-table table-bordered">
-        <thead class="thead-light">
-          <tr>
-            <th scope="col" class="text-left">PRODUTO</th>
-            <th scope="col" ng-repeat="forn in dados.fornecedores" colspan="2">
-              <a style="color: #fff;" href="/cotacaoadm/{{dados.projeto.id}}/{{forn.id}}">{{ forn.nome_fornecedor }}</a>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td scope="col" style="text-align: center;">PRODUTO</td>
-            <td scope="col" style="text-align: center;" ng-repeat-start="forn in dados.fornecedores">Fornecedor</td>
-            <td scope="col" style="text-align: center;" ng-repeat-end>Comprador</td>
-          </tr>
-          <tr ng-repeat="prod in dados.cotacoes">
-            <td class="text-left">{{ prod.produto }}</td>
-            <!-- Para cada fornecedor, exibimos um badge e o custo -->
-
-            <td ng-repeat-start="forn in dados.fornecedores"
-              ng-class="corStatus(prod.cotacoes[forn.id].lances.forn.status, prod.cotacoes[forn.id].lances.adm.status)">
-
-              <div ng-if="prod.cotacoes[forn.id].lances.adm.status != STATUS.ACEITO &&
-                      prod.cotacoes[forn.id].lances != null" class="preencher-celula">
-                <span class="badge text-bg-info">{{ prod.cotacoes[forn.id].lances.forn.qtdlances }}</span>
-                <span class="text-right"> R$ {{ prod.cotacoes[forn.id].lances.forn.custo }}</span>
-              </div>
-
-            </td>
-            <td ng-repeat-end
-              ng-class="corStatus(prod.cotacoes[forn.id].lances.adm.status, prod.cotacoes[forn.id].lances.forn.status)">
-              <input class="form-control bg-transparent" 
-              ng-if="prod.cotacoes[forn.id].lances.adm.status==STATUS.COTAR && 
-                    prod.cotacoes[forn.id].lances.forn.qtdlances < prod.cotacoes[forn.id].qtd_max_lances"
-                type="number" step="0.01" ng-model="prod.cotacoes[forn.id].lances.adm.contraproposta"
-                style="border: none; width: 70px" min="1" max="50" />
-
-              <div ng-if="prod.cotacoes[forn.id].lances.forn.status != STATUS.ACEITO && 
-                prod.cotacoes[forn.id].lances.adm.status!=STATUS.COTAR && prod.cotacoes[forn.id].lances != null">
-                <span class="badge text-bg-info">{{ prod.cotacoes[forn.id].lances.adm.qtdlances }}</span>
-                <span class="text-right">R$ {{ prod.cotacoes[forn.id].lances.adm.custo }}</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+<form action="" method="post">
+  {% csrf_token %}
+  <h2> {{projeto.nome}}
+    <input class="btn btn-success ms-2" type="submit" value="Salvar" id="methodForm">
+    <a  class="btn btn-secondary" href="{% url 'baixar' projeto.id %}" download> Download Document </a>
+    <a class="btn btn-secondary" href="/admin/appCotacao/projeto/">Ir Home</a>
+  </h2>
 
 
-    </div>
-  </form>
-  {% endverbatim %}
-  <!-- Scripts -->
-  <script>
-    angular.module('app', [])
-      .constant('STATUS', {
-        RECUSADO: 0,
-        PENDENTE: 1,
-        ACEITO: 2,
-        COTAR: 3,
+<div class="table-responsive">
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th scope="col" >PRODUTO</th>
+      {% for fornecedor in tabela.fornecedor %}
+        <th scope="col"><a href="{% url 'cotacaoadm' projeto.id fornecedor.id %}">{{fornecedor}}</a></th>
+        {% comment %} <th scope="col"><a>{{fornecedor.nomeempresa}} - *{{object.id}}*- *{{fornecedor.user_id}}*</a></th> {% endcomment %}
+      {% endfor %}
 
-      })
-      .controller('CotacaoController', ['$scope', 'STATUS', function ($scope, STATUS) {
-        $scope.STATUS = STATUS;
-        $scope.dados = JSON.parse(document.getElementById('dados-json').textContent);
+    </tr>
 
-        angular.forEach($scope.dados.cotacoes, function (cotacao) {
+  </thead>
+  <tbody>
+    {% for produto, cotacoes_produto in tabela.cotacoes.items %}
+    <tr>
+      <td>{{ produto }}</td>
+      {% for cotacao in cotacoes_produto %}
+        <td status={{cotacao.status}} class="preco" 
+          proposta-fornecedor="{{cotacao.preco}}"
+          id='proposta-{{cotacao.estrutura}}' ang-cel-preco>
+          <span class="badge"></span>
+          <span class="badge text-bg-secondary">{{cotacao.num_lances}}</span>
+          <span id='preco-raw' class="text-right">R$ {{cotacao.preco}}
+            {% if cotacao.status == 1 %}
+            <input type="number" step="0.01" name="proposta-{{cotacao.codigo}}" style="width: 60px" min="1"/>
+            {%endif%}
+          </span>
+
+        </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+   
+  </tbody>
+</table>
+</div>
+</form>
+
+<script>
+
+function upStatusCelula(celula, status, bg){
+  span_status = celula.find('span:eq(0)')
+  span_status.text(status);
+  span_status.removeClassStartingWith('text-bg');
+  span_status.addClass('text-bg-'+bg);
+}
+
+angular.module('app', [])
+.directive('angCelPreco', function(){
+    return function (scope, elem, attr){
+      // console.log(elem.attr('status'))
+        switch (elem.attr('status')) {
+
+        case "START":
+          upStatusCelula(elem, 'START', 'light');
+          break;
+
+        case "AGUARDANDO":
+          upStatusCelula(elem, 'FORNECEDOR', 'info');
+
+          break;
+
+        case 'FAZER_OU_ACEITAR':
+          upStatusCelula(elem, 'COTAR', 'primary');
+        break;
+          
+        case "FINALIZADO_SUCESSO":
+          upStatusCelula(elem, 'ACORDO', 'success');
+          break;
+
+        case "FINALIZDO_SEM_SUCESSO":
+            upStatusCelula(elem, 'S/ACORDO', 'warning');
+            break;
+
+        }
 
 
-          function formatarCusto(cotacao) {
-            for (var chave in cotacao.cotacoes) {
-              if (cotacao.cotacoes[chave].lances != null) {
-                cotacao.cotacoes[chave].lances.forn.custo = cotacao.cotacoes[chave].lances.forn.custo.replace('.', ',');
-                if (cotacao.cotacoes[chave].lances.forn != null) {
-                  cotacao.cotacoes[chave].lances.forn.custo = cotacao.cotacoes[chave].lances.forn.custo.replace('.', ',');
-                }
-                if (cotacao.cotacoes[chave].lances.adm != null) {
-                  cotacao.cotacoes[chave].lances.adm.custo = cotacao.cotacoes[chave].lances.adm.custo.replace('.', ',');
-                }
-              }
-              // console.log(cotacao.cotacoes[chave].lances.forn.custo);
-            }
-            // cotacao.cotacoes.forEach(function (subcotacao) {
-            // subcotacao.lances.forn.custo = subcotacao.lances.forn.custo.toFixed(2).replace('.', ',');
-            // })
-          };
+    }
+})
 
-          formatarCusto(cotacao);
-        })
-        // Dados de produtos (linhas)
-        // Cada produto tem um objeto para cada fornecedor,
-        // definindo: tipo (FORNECEDOR, COTAR, ACORDO), status, qtdlances e custo.
-        // $scope.dados = {
-        //   fornecedores: ["Copacol", "JBS", "Master", "Seara", "BRF"],
-        //   produtos_cotados: [{
-        //     nome: "Frango a passarinho",
-        //     Copacol: {
-        //       forn: { status: STATUS.PENDENTE, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.COTAR }
-        //     },
-        //     JBS: { forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 }, },
-        //     Master: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     Seara: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     BRF: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.ACEITO, qtdlances: 2, custo: 8.99 }
-        //     },
-        //   },
-        //   {
-        //     nome: "Frango inteiro",
-        //     Copacol: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     JBS: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     Master: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     Seara: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-
-        //   },
-        //   {
-        //     nome: "Coxa com sobrecoxa",
-        //     Copacol: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     JBS: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     Master: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     },
-        //     Seara: {
-        //       forn: { status: STATUS.RECUSADO, qtdlances: 1, custo: 4.90 },
-        //       adm: { status: STATUS.PENDENTE, qtdlances: 2, custo: 8.99 }
-        //     }
-        //   }
-        //   ]
-        // };
-
-        // Retorna a classe de badge com base no tipo
-        $scope.corStatus = function (tipo, statusOutro) {
-          if (statusOutro === STATUS.ACEITO) {
-            return "";
-          };
-
-          if (tipo === 0) {
-            return "bg-secondary";
-          } else if (tipo === 1) {
-            return "bg-warning text-dark";
-          } else if (tipo === 2) {
-            return "bg-success";
-          } else if (tipo === 3) {
-            return "bg-primary";
-          };
-        };
-
-        // Funções de exemplo para os botões
-        $scope.salvar = function () {
-          console.log($scope.dados);
-        };
-        $scope.downloadDoc = function () {
-          alert("Fazendo download do documento...");
-        };
-        $scope.irHome = function () {
-          alert("Voltando para Home...");
-        };
-      }]);
-  </script>
-</body>
-{% endblock %}
+</script>
+  {% endblock %}

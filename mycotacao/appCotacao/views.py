@@ -1,7 +1,5 @@
-import json
 from typing import Any
 from django.db.models.query import QuerySet
-from django.forms import model_to_dict
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -9,8 +7,6 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django.db import transaction
 from django.conf import settings
-from django.views.decorators.cache import never_cache
-from django.utils.decorators import method_decorator
 
 import os
 
@@ -20,11 +16,11 @@ from collections import namedtuple
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
-from .models import Projeto, CustomUser, Lance
+from .models import Cotacao, Projeto, CustomUser
 from .core.cotacao import CotacaoCore
 from .core.tabela_cotacao import TabelaCotacao
 from .core.excel import ExportarExcel
-
+# camada logica
 from .opdb import gravar_resposta
 
 # Create your views here.
@@ -68,20 +64,13 @@ class GerenciarProjeto(DetailView):
 
     def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
-        contexto['dados'] = TabelaCotacao(self.request.user, self.get_object()).get_cotacoes()
+        contexto['tabela'] = TabelaCotacao(self.request.user, self.get_object())
         
         return contexto
 
-    def render_to_response(self, context, **response_kwargs):
-        response = super().render_to_response(context, **response_kwargs)
-        # Define os cabeçalhos para não cachear a página
-        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-        response['Pragma'] = 'no-cache'
-        response['Expires'] = '0'
-        return response
 
-class Cotacao(ListView):
-    model = Lance
+class CotacaoView(ListView):
+    model = Cotacao
     template_name = 'appCotacao/cotacao.html'
     def get_queryset(self) -> QuerySet[Any]:
         qr = super().get_queryset()
@@ -97,18 +86,17 @@ class Cotacao(ListView):
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        resposta = json.loads(request.body)
-        print(resposta)
-        for r in resposta:
-            if r['contraproposta'] != "":
-                gravar_resposta(request.user, r['id'], r['contraproposta'])
+        print(list(request.POST.lists()))
+        for resposta, [custo] in filter(lambda x: x[0].startswith("input-resposta"), request.POST.lists()):
+            gravar_resposta(request.user,int(resposta.replace("input-resposta-", "")), custo)
         return HttpResponseRedirect('/')
 
     def get_context_data(self, **kwargs: Any):
         contexto =  super().get_context_data(**kwargs)
         cotacao = CotacaoCore(contexto['object_list'], self.request.user)
+
         context = {
-            'dados': cotacao.obter_dados_angular(),
+            'dados': cotacao,
             'fornecedor': self.fornecedor
         }
         

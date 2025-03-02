@@ -24,11 +24,11 @@ class Projeto(models.Model):
     nome = models.CharField(max_length=200, unique=True)
     start = models.DateField()
     fim = models.DateField(null=True)
-    fornecedor = models.ManyToManyField(CustomUser, 
+    fornecedores = models.ManyToManyField(CustomUser, 
                                         limit_choices_to={'is_active': True, 
                                                           'is_superuser': False, 
                                                           "is_staff": False})
-    produto = models.ManyToManyField(Produto)
+    produtos = models.ManyToManyField(Produto)
     
     def __str__(self) -> str:
         return self.nome
@@ -36,18 +36,34 @@ class Projeto(models.Model):
 class Lance(models.Model):
 
     class Meta:
-        ordering = ['lance']
+        ordering = ['sequencia']
     OPCOES_STATUS =(
         ('P', 'Pendente'),
         ('A', 'Aceito'),
         ('R', 'Recusado'),
-        ('D', 'Desistiu'),
-    )   
-    data = models.DateTimeField(auto_now_add=True)
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
-    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
-    fornecedor = models.ForeignKey(CustomUser,verbose_name = 'User', on_delete=models.CASCADE)
-    dono = models.ForeignKey(CustomUser, related_name='dono', on_delete=models.CASCADE)
-    numero = models.SmallIntegerField()
+    )
+    dono = models.ForeignKey(CustomUser,verbose_name = 'User', on_delete=models.CASCADE)
+    sequencia = models.SmallIntegerField()
     preco = models.DecimalField(default=Decimal("0.0"), max_digits=5 ,decimal_places=2)
     status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
+
+
+class Cotacao(models.Model):
+    OPCOES_STATUS =(
+        ('1', 'Cotando'),
+        ('2', 'Aceitar ou Recusar'),
+        ('3', 'Finalizado com acordo'),
+        ('5', 'Finalizado sem acordo'),
+    )
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    fornecedor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
+    total_lances = models.SmallIntegerField(default=4)
+    lances = models.ManyToManyField(Lance)
+    
+    class Meta:
+        unique_together  = [["produto", "fornecedor", "projeto"]]
+
+
+
