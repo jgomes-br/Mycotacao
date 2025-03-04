@@ -39,8 +39,8 @@ class TabelaCotacao:
             temp[prod] = [None]*total_forn
 
         for cotacao in projeto.estrutura_set.all():
-            lance = cotacao.lances.last()
-            qtd_lances = len(cotacao.lances.all())
+            lance = cotacao.lances_old.last()
+            qtd_lances = len(cotacao.lances_old.all())
 
             status = EnumStatus.AGUARDANDO
             if cotacao.status == EnumStatusEstrutura.COTANDO.value:

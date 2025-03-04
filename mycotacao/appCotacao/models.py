@@ -50,20 +50,24 @@ class Lance(models.Model):
 
 class Cotacao(models.Model):
     OPCOES_STATUS =(
-        ('1', 'Cotando'),
-        ('2', 'Aceitar ou Recusar'),
-        ('3', 'Finalizado com acordo'),
-        ('5', 'Finalizado sem acordo'),
+        (1, 'Cotando'),
+        (2, 'Aceitar ou Recusar'),
+        (3, 'Finalizado com sucesso'),
+        (5, 'Finalizado sem sucesso'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     fornecedor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    status = models.CharField(max_length=1, null=True, choices=OPCOES_STATUS)
-    total_lances = models.SmallIntegerField(default=4)
-    lances = models.ManyToManyField(Lance)
+    status = models.SmallIntegerField(null=True, choices=OPCOES_STATUS)
+    qtd_max_lances = models.SmallIntegerField(default=4)
+    lances_old = models.ManyToManyField(Lance)
+    # lances_inlinha = minha_lista = models.JSONField(default=list)
+    
     
     class Meta:
         unique_together  = [["produto", "fornecedor", "projeto"]]
 
-
+    @property
+    def ja_finalizou(self):
+        return self.status >= 3
 

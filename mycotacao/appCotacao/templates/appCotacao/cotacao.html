@@ -1,183 +1,185 @@
 {% extends 'appCotacao/base.html' %}
-{% load removespaces %}
-{% block ativarangular %}ng-app="app"{% endblock %}
+{% load customtags %}
 {% block content %}
 
 <style>
-  .ng-hide:not(.ng-hide-animate) {
-    /* These are just alternative ways of hiding an element */
-    display: block!important;
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
+  /* Para Chrome, Safari, Edge (baseado em Chromium) */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
+  
+  /* Para Firefox */
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+  .title {
+    color: #5C6AC4;
+  }
+  
 </style>
 
 <div id="alerta-proposta-incompleta" class="alert alert-danger" role="alert" style="display:none">
     Favor responder as proposta!
   </div>
 
-<form method="post" action="">
-    <h1>{{ dados.projeto.nome }} / {{fornecedor}}</h1>
+<form method="post" id="meuFormulario">
+  {% csrf_token %}
+  {{ formset.management_form }}
 
-    {% csrf_token %}
+    {% comment %} <h2 class="display-6 title">{{ cotacoes.0.projeto.nome }}</h2> {% endcomment %}
+    {% comment %} <div class="container mt-4">
+      <h2>{{ cotacoes.0.projeto.nome }}</h2>
+    </div> {% endcomment %}
+    {% for form in formset %}
+    {# Assumindo que a ordem dos formulários corresponde à ordem dos objetos em "cotacoes" #}
+    {% with cotacao=form.cotacao %}
     
 
-
-    {% for cotacao in dados.cotacoes %}
-    <div class="card mb-1" ang-cotacao-produto>
-        <div class="card-header">
-            {{cotacao.produto}} -
-          <span id='status-card'>{{ cotacao.status }}</span>
-          <span>{{cotacao.qtd_lances}} / {{ cotacao.qtd_max_lances }}</span>
-        </div>
-
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col" class="text-center">Lance</th>
-            <th scope="col" class="text-center">Dono Proposta</th>
-            <th scope="col" class="text-center">Custo Net</th>
-            <th scope="col" class="text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-          {% for lance in cotacao.lances %}
-            
-              <tr >
-                <td class="text-center">{{ lance.lance }}</td>
-                <td class="text-center"> {{ lance.user }}</td>
-                <td class="text-center">{{ lance.preco }}</td>
-                <td class="text-center"><span>{{ lance.status }}</span> </td>
-              </tr>
-          {% endfor %}
+    <div class="card mb-2">
+      <div class="card-header {{cotacao.status|color_background}}">
+        <strong>{{cotacao.produto}}</strong>
+        <span >({{cotacao.lances_old.all|length}}/{{ cotacao.qtd_max_lances }})</span>
+        <span >
+          {{cotacao.status|icone_status}}
+          {{cotacao.get_status_display}}</span>
+      </div>
+      <div class="card-body p-0">
+      {{form.cotacao_id}}
 
 
-          {{cotacao.acesso }}
-          {% if cotacao.acesso <= 2 %}
-
-            <tr id="novo-lance" class="{{ cotacao.acesso }}" {% if cotacao.acesso.value <= 2%} 
-              style="display:none;" {%endif%}>
-              <td>Novo</td>
-              <td>Eu</td>
-              <td>
-              <div id="entrada" class="input-group input-group-sm col-sm-10" style="width: 100px;">
-                  <span class="input-group-text">$</span>
-                  <input type="text" name="input-resposta-{{cotacao.id}}" class="form-control input-custo" pattern="^([0-9]+)(,[0-9]{1,2})?$"/>
-              </div>
-              </td>
-              <td><span>Pendente</span></td>
+        <table class="table table-sm mb-0" name="c-{{cotacao.id}}">
+          <thead class="table-secondary">
+            <tr>
+              <th scope="col" class="text-center">Lance</th>
+              <th scope="col" class="text-center">Dono Proposta</th>
+              <th scope="col" class="text-center">Custo Net</th>
+              <th scope="col" class="text-center">Status</th>
             </tr>
+          </thead>
+          <tbody>
+            
+            {% for lance in cotacao.lances_old.all %}
+              
+                <tr >
+                  <td class="text-center">{{ lance.sequencia }}º</td>
+                  <td class="text-center"> {{ lance.dono }}</td>
+                  <td class="text-center">{{ lance.preco }}</td>
+                  <td class="text-center ">
+                    <span class="{{lance.status|getcolorstatus}}"> {{lance.status|icone_status}} {{ lance.get_status_display }}</span></td>
+                </tr>
+            {% endfor %}
 
+            {%if cotacao|posso_fazer_contraproposta:user %}
+
+              <tr id="novo-lance" {%if not cotacao|primeiro_lance:user %} style="display: none;" {%endif%}>
+                <td class="text-center">Novo</td>
+                <td class="text-center">Eu</td>
+                <td class="text-center">{{form.novo_custo}}</td>
+                <td class="text-center"><span class="badge bg-warning text-dark">Pendente</span></td>
+              </tr>
+            {%else%}
+            {% comment %} manter a compatibilidade de ter uma linha {% endcomment %}
+              <tr style="display: none;">
+                {% if cotacao.status == 2%}<td colspan="4"> {{form.novo_custo}}</td>{%endif%}</tr>
             {% endif %}
 
 
-        </tbody>
-      </table>
-      {% if cotacao.acesso <= 2 %}
-        {% if cotacao.ultimo_lance != None %}
-            <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                <input type="radio" class="btn-check" name="cotacao-{{cotacao.id}}" id="aceito-{{cotacao.id}}" autocomplete="off">
-                <label class="btn btn-outline-success" for="aceito-{{cotacao.id}}">Aceitar</label>
-            
-                <input type="radio" class="btn-check" name="cotacao-{{cotacao.id}}" id="recusado-{{cotacao.id}}" autocomplete="off">
-                <label class="btn btn-outline-danger" for="recusado-{{cotacao.id}}">recusar</label>
-            </div>
+          </tbody>
+        </table>
+        {% comment %} {% if cotacao.status == 1 and cotacao.lances_old.last.dono != user%} {% endcomment %}
+        {%if cotacao|minha_vez:user and not cotacao|primeiro_lance:user  %}
+          <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+
+              <input type="radio" class="btn-check" name="c-{{cotacao.id}}" id="a-{{cotacao.id}}" autocomplete="off" value="ACEITO">
+              <label class="btn btn-outline-success" for="a-{{cotacao.id}}">Aceitar</label>
+          
+              <input type="radio" class="btn-check" name="c-{{cotacao.id}}" id="r-{{cotacao.id}}" autocomplete="off" value="RECUSADO">
+              <label class="btn btn-outline-danger" for="r-{{cotacao.id}}">recusar</label>
+          </div>
         {% endif %}
-      {% endif %}
+      
+        </div>
+      </div>
 
-    </div>
-
+    
+    {% endwith %}
     {% endfor %}
 
-    {% if dados.botao_enviar %}
+    {% if tem_cotacao_aberta %}
     <div class="mt-2 container">
       <div class="row">
         <input class="btn btn-info pull-right" type="submit" value="Enviar" id="methodForm">
       </div>
     </div>
     {%endif%}
+
  </form>
 
 <script>
   
-
-  angular.module('app', [])
-  .directive('angCotacaoProduto', function(){
-    return {
-      scope: {
-        
-      },
-      link: function(scope, elem, attr){
-          elem.find('span:contains(Pendente)').addClass("badge bg-warning text-dark")
-          elem.find('span:contains(Aceito)').addClass("badge bg-success")
-          elem.find('span:contains(Finalizado)').addClass("badge bg-success")
-          elem.find('span:contains(Cotando)').addClass("badge bg-primary")
-
-        elem.find('.btn-check').on('click', function(){
-          let linha_nova_cotacao = elem.find('#novo-lance.podecotar')
-          let status_proposta = elem.find('tr:eq(-2) > td:last > span')
-          let input_custo =  elem.find('.input-custo')
-          if($(this).attr('id').startsWith('recusado')){
-            status_proposta.text('Recusado')
-            linha_nova_cotacao.show()
-            if(linha_nova_cotacao.length == 0){
-              input_custo.val(999)
-            }else{
-            input_custo.val(0)}
-            
-          }else{
-            let valor = elem.find('tr:eq(-2) > td:eq(-2)').text()
-            input_custo.val(valor)
-            status_proposta.text('Aceito')
-            linha_nova_cotacao.hide()
-          }
-
-          elem.find('td > span ').attr("class", "")
-          elem.find('span:contains(Aceito)').addClass("badge bg-success")
-          elem.find('span:contains(Pendente)').addClass("badge bg-warning text-dark")
-        })
-
-
-        } 
-      }
-  })
-
-  function validacao(){
+   // Função que atualiza o status da penúltima linha e exibe ou oculta a última
+   function atualizarStatusRadio() {
+    // Seleciona todas as linhas do corpo da tabela
+    var $linhas = $('table[name="' + this.name + '"] tbody tr');
+    // Certifique-se de que existam pelo menos duas linhas
+    if ($linhas.length < 2) return;
+    
+    // A penúltima linha é a que está na posição length - 2
+    var $penultima = $linhas.eq($linhas.length - 2);
+    // A última linha (a que queremos mostrar/ocultar)
+    var $ultima = $linhas.last();
+    // Verifica qual radio button está selecionado
+    if (this.value == 'ACEITO') {
+      ultimoPreco =  parseFloat($penultima.find('td:nth-child(3)').text().replace(',', '.'));
+      $ultima.find('input[type="number"]').val(ultimoPreco);
+      // Altera o status da penúltima linha para "Pendente"
+      $penultima.find('td:last span').text('Aceito');
+      $penultima.find('td:last span').attr('class', 'badge bg-success')
+      // Oculta a última linha
+      $ultima.hide();
+    } else if (this.value == 'RECUSADO') {
+      // Altera o status da penúltima linha para "Recusado"
+      $penultima.find('td:last span').text('Recusado');
+      $penultima.find('td:last span').attr('class', 'badge bg-danger')
       
-    $("#alerta-proposta-incompleta").hide()
-    var ha_erro = false
+      if ($ultima.attr('id')=='novo-lance'){
+        // preciso identificar se é o ultimo lance
+        $ultima.find('input[type="number"]').val(0);
+        // Exibe a última linha
+        $ultima.show();
+      }else{
+        // Não pode exibir a linha pois não é permitido uma contraproposta
+        $ultima.find('input[type="number"]').val(999);
+      }
+      
 
-    $("input.input-custo").each(function(pos, caixa){
-      if ($(this).val() <= 0) {
-        $(this).closest('.card').addClass("border-danger")
-        ha_erro = true
-      }else 
-        $(this).closest('.card').removeClass("border-danger")
-    })
-
-    if (ha_erro){
-      $("#alerta-proposta-incompleta").show()
-      return false
-    }else{
-      return true
     }
-
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('form')
-    form.addEventListener('submit', event => {
-      // submit event detected
-      event.preventDefault()
-     if(validacao()){
+  $(document).ready(function(){
+    // Ao carregar a página, podemos definir eventos para os radio buttons
+    // Atualiza a exibição quando um radio button é clicado
+    $('input[type="radio"]').on('change', atualizarStatusRadio);
+    
+    // valida o meuFormulario
+    $("#meuFormulario").submit(function (e) {
+          let valido = true;
+  
+          $("input[type='number']").each(function () {
+              if ($(this).val().trim() === "" || isNaN($(this).val())) {
+                  valido = false;
+              }
+          });
+  
+          if (!valido) {
+              $("#alerta-proposta-incompleta").show()
+              e.preventDefault(); // Impede o envio do formulário
+          }
+      });
+  });
 
-       $("form").submit()
-     }  
-
-    })
-  })
 </script>
 
  {% endblock %}

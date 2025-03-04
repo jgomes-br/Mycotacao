@@ -1,5 +1,6 @@
 from typing import Any
 from django.db.models.query import QuerySet
+from django.forms import formset_factory
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -17,11 +18,12 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Cotacao, Projeto, CustomUser
-from .core.cotacao import CotacaoCore
 from .core.tabela_cotacao import TabelaCotacao
 from .core.excel import ExportarExcel
+from .formularios import FormRespostaCotacao
+from .core.constantes import EtapaCotacao
 # camada logica
-from .opdb import gravar_resposta
+from .core.db.gravar_lances import gravar_resposta
 
 # Create your views here.
 
@@ -72,6 +74,7 @@ class GerenciarProjeto(DetailView):
 class CotacaoView(ListView):
     model = Cotacao
     template_name = 'appCotacao/cotacao.html'
+    context_object_name = 'cotacoes'
     def get_queryset(self) -> QuerySet[Any]:
         qr = super().get_queryset()
         projeto_id = self.kwargs['projeto_id']
@@ -86,18 +89,24 @@ class CotacaoView(ListView):
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        print(list(request.POST.lists()))
-        for resposta, [custo] in filter(lambda x: x[0].startswith("input-resposta"), request.POST.lists()):
-            gravar_resposta(request.user,int(resposta.replace("input-resposta-", "")), custo)
+        ResponderCotacaoFormSet = formset_factory(FormRespostaCotacao, extra=0)
+        formset = ResponderCotacaoFormSet(request.POST)
+        if formset.is_valid():
+            for form in formset:
+                cotacao_id = form.cleaned_data.get("cotacao_id")
+                novo_custo = form.cleaned_data.get("novo_custo")
+                if not novo_custo is None:
+                    gravar_resposta(request.user, form.cotacao, novo_custo)
         return HttpResponseRedirect('/')
 
     def get_context_data(self, **kwargs: Any):
-        contexto =  super().get_context_data(**kwargs)
-        cotacao = CotacaoCore(contexto['object_list'], self.request.user)
-
-        context = {
-            'dados': cotacao,
-            'fornecedor': self.fornecedor
-        }
+        context =  super().get_context_data(**kwargs)
+        ResponderCotacaoFormSet = formset_factory(FormRespostaCotacao, extra=0)
+        # Cria os dados iniciais para cada cotação, baseado na queryset atual
+        initial_data = [{'cotacao_id': cotacao.id, 'cotacao': cotacao} for cotacao in self.get_queryset()]
+        context['formset'] = ResponderCotacaoFormSet(initial=initial_data)
         
+        alguma_cotacao_aberta = any([cotacao.status <= EtapaCotacao.ACEITAR_RECUSAR.value for cotacao in self.get_queryset()])
+        eu_posso_enviar_resosta = any([getattr(cotacao.lances_old.last(), "dono", None) != self.request.user for cotacao in self.get_queryset()])
+        context['tem_cotacao_aberta'] = alguma_cotacao_aberta and eu_posso_enviar_resosta
         return context
