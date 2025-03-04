@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from ...models import Lance, CustomUser, Cotacao
-from ..constantes import StatusLance, EtapaCotacao
+from ..constantes import StatusLance, CotacaoStatus
 from decimal import Decimal
 
 class RespostaInterface:
@@ -58,7 +58,7 @@ class RespostaInterface:
         # Atualiza a quantidade de lances de forma mais eficiente
         self.qtd_lances = self.cotacao.lances_old.count()
 
-    def set_status_cotacao(self, status: EtapaCotacao):
+    def set_status_cotacao(self, status: CotacaoStatus):
         self.cotacao.status = status.value
         self.cotacao.save()
 
@@ -73,20 +73,20 @@ class AcoesLances:
     @staticmethod
     def aceito(resposta: RespostaInterface):
         resposta.aceitar_ultimo_lance()
-        resposta.set_status_cotacao(EtapaCotacao.FINALIZADA_COM_ACORDO)
+        resposta.set_status_cotacao(CotacaoStatus.FINALIZADA_COM_ACORDO)
 
     @staticmethod
     def contra_proposta(resposta: RespostaInterface):
         resposta.recusar_ultimo_lance()
         resposta.criar_lance()
         if resposta.qtd_lances == resposta.qtd_max_lances:
-            resposta.set_status_cotacao(EtapaCotacao.ACEITAR_RECUSAR)  
+            resposta.set_status_cotacao(CotacaoStatus.ACEITAR_RECUSAR)  
             # Ou use uma constante para esse status
 
     @staticmethod
     def declinar(resposta: RespostaInterface):
         resposta.recusar_ultimo_lance()
-        resposta.set_status_cotacao(EtapaCotacao.FINALIZADO_SEM_ACORDO)
+        resposta.set_status_cotacao(CotacaoStatus.FINALIZADO_SEM_ACORDO)
 
 
 def gravar_resposta(user_atual: CustomUser, cotacao: Cotacao, novo_custo: Decimal):

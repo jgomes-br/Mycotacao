@@ -1,0 +1,56 @@
+
+
+Cotacao:
+  Fornecedor
+  lances: (7,90; 5,78; 6,00)
+  status: finalizado
+  valor: atual
+  
+  Coxa Frango: Inicial
+  	Seara CustoNet [12,90]
+  	
+ Coxa Frango:
+ 	1	2	3	4
+ 	Seara	CRF	Seara	Carrefour
+ 	14,00	12,00	14,00   12,00
+ 
+ Frango Inteiro:
+ 		 Seara    Carrefour
+ 	CustoNet (1) 7,00 (2) 6,00 
+ 	CustoNet (3) 7,50 	    
+ 	Custo fechado 7,50
+ 	Volume	 	  (1) 1000
+ 	Volume	 (2) 500  (2) 700
+ 	Volume 	 (3) 600  
+ 	Não foi possivel negociar volume
+  	
+  Frango Passarinho: Finalizado sem acordo
+   - Seara:	custoNet: 14,00 - Recusado
+   - Carrefour: custoNet: 12,00 - Recusado
+   - Seara: 	custoNet: 12,45 - Recusado
+   - Carrefour	custoNet: 12,00 - Recusado
+
+  Frango Inteiro: Finalizado com acordo
+   - Seara:	custoNet: 	7,00  - Recusado
+   - Carrefour: custoNet: 	6,00  - Aceito
+   - Carrefour	Volume: 	1000  - Recusar
+   - Seara	Volume		500   - Aceito
+   - Resumo: negociacao finalizada com sucesso
+   	- CustoNet: 6,00 R$
+   	- Volume:   500
+   	- Compra Total: 30.000R$
+
+  Frango Inteiro: Finalizado com acordo
+   - Seara:	custoNet: 	7,00  - Recusado
+   - Carrefour: custoNet: 	6,00  - Aceito
+   - Carrefour	Volume: 	1000  - Recusar
+   - Seara	Volume		500   - Recusado
+   - Resumo: negociacao finalizada com sucesso
+   	- CustoNet: 6,00 R$
+   	- Volume:   500
+   	- Compra Total: 30.000R$
+   	
+   	
+   	
+   
+

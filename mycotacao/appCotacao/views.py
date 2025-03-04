@@ -21,7 +21,7 @@ from .models import Cotacao, Projeto, CustomUser
 from .core.tabela_cotacao import TabelaCotacao
 from .core.excel import ExportarExcel
 from .formularios import FormRespostaCotacao
-from .core.constantes import EtapaCotacao
+from .core.constantes import CotacaoStatus
 # camada logica
 from .core.db.gravar_lances import gravar_resposta
 
@@ -106,7 +106,7 @@ class CotacaoView(ListView):
         initial_data = [{'cotacao_id': cotacao.id, 'cotacao': cotacao} for cotacao in self.get_queryset()]
         context['formset'] = ResponderCotacaoFormSet(initial=initial_data)
         
-        alguma_cotacao_aberta = any([cotacao.status <= EtapaCotacao.ACEITAR_RECUSAR.value for cotacao in self.get_queryset()])
-        eu_posso_enviar_resosta = any([getattr(cotacao.lances_old.last(), "dono", None) != self.request.user for cotacao in self.get_queryset()])
-        context['tem_cotacao_aberta'] = alguma_cotacao_aberta and eu_posso_enviar_resosta
+        # alguma_cotacao_aberta = any([cotacao.status in (0, 1, 2, 3) for cotacao in self.get_queryset()])
+        # eu_posso_enviar_resosta = any([getattr(cotacao.lances_old.last(), "dono", None) != self.request.user for cotacao in self.get_queryset()])
+        context['tem_cotacao_aberta'] = any([cotacao.status in range(3) for cotacao in self.get_queryset()])
         return context

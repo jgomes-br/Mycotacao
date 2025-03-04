@@ -50,19 +50,28 @@ class Lance(models.Model):
 
 class Cotacao(models.Model):
     OPCOES_STATUS =(
-        (1, 'Cotando'),
-        (2, 'Aceitar ou Recusar'),
-        (3, 'Finalizado com sucesso'),
-        (5, 'Finalizado sem sucesso'),
+        (100, 'Fornecedor Não Trabalha com este produto'),
+        (0, 'Custo/Fornecedor/Inicial'),
+        (1, 'Custo/Carrefour'),
+        (2, 'Custo/Fornecedor'),
+        (50, 'Custo/Fornecedor/Aceitar|Recusar'),
+        (101, 'Negociação de Custo cancelada'),
+        # custo foi aceito esta aguardando negociaçao do volume
+        (5, 'Aguardando Carrefour'),
+        (6, 'Volume/Aguardando:Fornecedor'),
+        (7, 'Volume/Aguardando:Carrefour'),
+        (51, 'Volume/Fornecedor/Aceitar|Recusar'),
+        (102,'Cotação Cancelada'),
+        (10, 'Cotação Finalizada'),
     )
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     fornecedor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    status = models.SmallIntegerField(null=True, choices=OPCOES_STATUS)
+    status = models.SmallIntegerField(null=True, choices=OPCOES_STATUS, default=0)
     qtd_max_lances = models.SmallIntegerField(default=4)
     lances_old = models.ManyToManyField(Lance)
-    # lances_inlinha = minha_lista = models.JSONField(default=list)
-    
+    historico_lances = models.JSONField(null=True,default=list)
+    custo = models.DecimalField(default=Decimal("0.0"), max_digits=5 ,decimal_places=2)
     
     class Meta:
         unique_together  = [["produto", "fornecedor", "projeto"]]

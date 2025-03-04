@@ -28,21 +28,17 @@
   {% csrf_token %}
   {{ formset.management_form }}
 
-    {% comment %} <h2 class="display-6 title">{{ cotacoes.0.projeto.nome }}</h2> {% endcomment %}
-    {% comment %} <div class="container mt-4">
-      <h2>{{ cotacoes.0.projeto.nome }}</h2>
-    </div> {% endcomment %}
     {% for form in formset %}
     {# Assumindo que a ordem dos formulários corresponde à ordem dos objetos em "cotacoes" #}
     {% with cotacao=form.cotacao %}
     
 
     <div class="card mb-2">
-      <div class="card-header {{cotacao.status|color_background}}">
+      <div class="card-header">
         <strong>{{cotacao.produto}}</strong>
         <span >({{cotacao.lances_old.all|length}}/{{ cotacao.qtd_max_lances }})</span>
         <span >
-          {{cotacao.status|icone_status}}
+          
           {{cotacao.get_status_display}}</span>
       </div>
       <div class="card-body p-0">
@@ -67,13 +63,12 @@
                   <td class="text-center"> {{ lance.dono }}</td>
                   <td class="text-center">{{ lance.preco }}</td>
                   <td class="text-center ">
-                    <span class="{{lance.status|getcolorstatus}}"> {{lance.status|icone_status}} {{ lance.get_status_display }}</span></td>
+                    <span> {{ lance.get_status_display }}</span></td>
                 </tr>
             {% endfor %}
 
-            {%if cotacao|posso_fazer_contraproposta:user %}
-
-              <tr id="novo-lance" {%if not cotacao|primeiro_lance:user %} style="display: none;" {%endif%}>
+            {%if cotacao.status|exibir_proposta_contraproposta:user %}
+              <tr id="novo-lance" {%if not cotacao.status == 0%} style="display: none;" {%endif%}>
                 <td class="text-center">Novo</td>
                 <td class="text-center">Eu</td>
                 <td class="text-center">{{form.novo_custo}}</td>
@@ -89,7 +84,7 @@
           </tbody>
         </table>
         {% comment %} {% if cotacao.status == 1 and cotacao.lances_old.last.dono != user%} {% endcomment %}
-        {%if cotacao|minha_vez:user and not cotacao|primeiro_lance:user  %}
+        {% if cotacao.status == 1 or cotacao.status == 2%}
           <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
 
               <input type="radio" class="btn-check" name="c-{{cotacao.id}}" id="a-{{cotacao.id}}" autocomplete="off" value="ACEITO">
@@ -98,7 +93,7 @@
               <input type="radio" class="btn-check" name="c-{{cotacao.id}}" id="r-{{cotacao.id}}" autocomplete="off" value="RECUSADO">
               <label class="btn btn-outline-danger" for="r-{{cotacao.id}}">recusar</label>
           </div>
-        {% endif %}
+          {%endif%}
       
         </div>
       </div>
